@@ -1,0 +1,57 @@
+// Prisma Schema untuk Meeting Room Dashboard
+// Database: PostgreSQL
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// Model untuk Room (Ruang Rapat)
+model Room {
+  id         String   @id @default(cuid())
+  name       String
+  capacity   Int
+  facilities String[]
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  // Relasi ke Booking
+  bookings   Booking[]
+}
+
+// Model untuk Booking (Reservasi)
+model Booking {
+  id          String    @id @default(cuid())
+  roomId      String
+  date        DateTime
+  startTime   DateTime
+  endTime     DateTime
+  title       String
+  bookerName  String
+  bookerEmail String?
+  status      String    @default("pending") // pending, approved, rejected
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  // Relasi ke Room
+  room        Room      @relation(fields: [roomId], references: [id], onDelete: Cascade)
+
+  // Index untuk query performa
+  @@index([roomId])
+  @@index([date])
+  @@index([status])
+}
+
+// Model untuk User (Admin Only)
+model User {
+  id           String   @id @default(cuid())
+  username     String   @unique
+  passwordHash String
+  role         String   @default("admin") // admin, guest
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
