@@ -1,0 +1,59 @@
+version: '3.8'
+
+services:
+  # PostgreSQL Database
+  postgres:
+    image: postgres:15-alpine
+    container_name: aturuang-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: aturuang
+      POSTGRES_PASSWORD: aturuang_password
+      POSTGRES_DB: aturuang
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U aturuang"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  # Backend API
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: aturuang-backend
+    restart: unless-stopped
+    ports:
+      - "3001:3001"
+    environment:
+      - DATABASE_URL=postgresql://aturuang:aturuang_password@postgres:5432/aturuang
+      - JWT_SECRET=dev-secret-key-min-32-chars-change-in-production
+      - FRONTEND_URL=http://localhost:3000
+      - PORT=3001
+      - NODE_ENV=development
+    volumes:
+      - ./backend:/app
+      - /app/node_modules
+    depends_on:
+      postgres:
+        condition: service_healthy
+    command: sh -c "npx prisma generate && npx prisma migrate deploy && node src/index.js"
+
+  # Frontend (optional - jika mau dijalankan)
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: aturuang-frontend
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    depends_on:
+      - backend
+
+volumes:
+  postgres_data:
