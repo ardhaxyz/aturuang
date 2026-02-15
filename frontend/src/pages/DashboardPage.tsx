@@ -1,11 +1,12 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Calendar, Clock, Users, CheckCircle, XCircle, AlertCircle } from 'lucide-react';
+import { Calendar, Clock, CheckCircle, XCircle, AlertCircle, Building, PlusCircle } from 'lucide-react';
 import { bookingAPI, roomAPI } from '../utils/api';
 import { Booking, Room } from '../types';
 import { useAuth } from '../contexts/AuthContext';
 
 export function DashboardPage() {
+  const { user } = useAuth();
   const [stats, setStats] = useState({
     totalRooms: 0,
     bookedToday: 0,
@@ -15,7 +16,6 @@ export function DashboardPage() {
   const [todayBookings, setTodayBookings] = useState<Booking[]>([]);
   const [_rooms, setRooms] = useState<Room[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const { isAdmin } = useAuth();
 
   useEffect(() => {
     fetchDashboardData();
@@ -25,7 +25,7 @@ export function DashboardPage() {
     setIsLoading(true);
     try {
       const today = new Date().toISOString().split('T')[0];
-      
+
       // Fetch rooms
       const roomsResponse = await roomAPI.getAll();
       if (roomsResponse.success && roomsResponse.data?.rooms) {
@@ -45,7 +45,7 @@ export function DashboardPage() {
 
         const bookedToday = bookings.filter(b => b.status === 'approved').length;
         const pendingApprovals = bookings.filter(b => b.status === 'pending').length;
-        
+
         // Check active bookings (current time within booking time)
         const now = new Date();
         const currentHour = now.getHours();
@@ -54,12 +54,12 @@ export function DashboardPage() {
 
         const activeNow = bookings.filter(booking => {
           if (booking.status !== 'approved') return false;
-          
+
           const [startHour, startMin] = booking.startTime.split(':').map(Number);
           const [endHour, endMin] = booking.endTime.split(':').map(Number);
           const startTime = startHour * 60 + startMin;
           const endTime = endHour * 60 + endMin;
-          
+
           return currentTime >= startTime && currentTime <= endTime;
         }).length;
 
@@ -109,100 +109,37 @@ export function DashboardPage() {
 
   return (
     <div className="space-y-8">
-      {/* Welcome Section */}
-      <div>
-        <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Dashboard</h1>
-        <p className="mt-2 text-gray-600 dark:text-gray-400">
-          Welcome to Aturuang. View today's schedule and quick stats.
-        </p>
-      </div>
-
-      {/* Quick Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
-          <div className="flex items-center">
-            <div className="flex-shrink-0">
-              <Users className="h-8 w-8 text-primary-600 dark:text-primary-400" />
-            </div>
-            <div className="ml-4">
-              <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Total Rooms</p>
-              <p className="text-2xl font-semibold text-gray-900 dark:text-white">{stats.totalRooms}</p>
+      {/* Top Row: Welcome Box (left, 2/3) + Quick Actions (right, 1/3) */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Welcome Box - takes 2 columns on desktop */}
+        <div className="lg:col-span-2 bg-gradient-to-r from-primary-50 to-primary-100 dark:from-primary-900/30 dark:to-primary-800/30 rounded-lg shadow p-6">
+          <div className="flex items-center gap-3">
+            <span className="text-4xl animate-bounce">👋</span>
+            <div>
+              <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
+                Hello, {user?.username || 'User'}!
+              </h1>
+              {user?.organization && (
+                <p className="text-gray-600 dark:text-gray-400 mt-1">
+                  From {user.organization.name}
+                </p>
+              )}
             </div>
           </div>
+          <p className="mt-3 text-gray-700 dark:text-gray-300">
+            Welcome to Aturuang! Manage your meeting room bookings efficiently.
+          </p>
         </div>
 
-        <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
-          <div className="flex items-center">
-            <div className="flex-shrink-0">
-              <Calendar className="h-8 w-8 text-green-600 dark:text-green-400" />
-            </div>
-            <div className="ml-4">
-              <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Booked Today</p>
-              <p className="text-2xl font-semibold text-gray-900 dark:text-white">{stats.bookedToday}</p>
-            </div>
-          </div>
-        </div>
-
-        <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
-          <div className="flex items-center">
-            <div className="flex-shrink-0">
-              <AlertCircle className="h-8 w-8 text-yellow-600 dark:text-yellow-400" />
-            </div>
-            <div className="ml-4">
-              <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Pending Approvals</p>
-              <p className="text-2xl font-semibold text-gray-900 dark:text-white">{stats.pendingApprovals}</p>
-            </div>
-          </div>
-        </div>
-
-        <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
-          <div className="flex items-center">
-            <div className="flex-shrink-0">
-              <Clock className="h-8 w-8 text-blue-600 dark:text-blue-400" />
-            </div>
-            <div className="ml-4">
-              <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Active Now</p>
-              <p className="text-2xl font-semibold text-gray-900 dark:text-white">{stats.activeNow}</p>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Quick Actions */}
-      <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
-        <div className="flex justify-between items-center mb-6">
-          <h2 className="text-lg font-medium text-gray-900 dark:text-white">Quick Actions</h2>
+        {/* Quick Actions - condensed, only "Book a Room" */}
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6 hidden lg:block">
+          <h2 className="text-lg font-medium text-gray-900 dark:text-white mb-4">Quick Actions</h2>
           <Link
             to="/book"
-            className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500"
+            className="block w-full text-center px-6 py-4 bg-primary-600 hover:bg-primary-700 text-white rounded-lg shadow-md font-semibold text-lg transition-colors"
           >
             Book a Room
           </Link>
-        </div>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <Link
-            to="/rooms"
-            className="bg-gray-50 dark:bg-gray-700/50 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg p-4 border border-gray-200 dark:border-gray-700 transition-colors"
-          >
-            <h3 className="font-medium text-gray-900 dark:text-white">View All Rooms</h3>
-            <p className="mt-1 text-sm text-gray-600 dark:text-gray-400">See room capacities and facilities</p>
-          </Link>
-          <Link
-            to="/calendar"
-            className="bg-gray-50 dark:bg-gray-700/50 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg p-4 border border-gray-200 dark:border-gray-700 transition-colors"
-          >
-            <h3 className="font-medium text-gray-900 dark:text-white">Calendar View</h3>
-            <p className="mt-1 text-sm text-gray-600 dark:text-gray-400">View bookings in calendar format</p>
-          </Link>
-          {isAdmin && (
-            <Link
-              to="/admin"
-              className="bg-gray-50 dark:bg-gray-700/50 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg p-4 border border-gray-200 dark:border-gray-700 transition-colors"
-            >
-              <h3 className="font-medium text-gray-900 dark:text-white">Admin Panel</h3>
-              <p className="mt-1 text-sm text-gray-600 dark:text-gray-400">Approve pending bookings</p>
-            </Link>
-          )}
         </div>
       </div>
 
@@ -280,6 +217,66 @@ export function DashboardPage() {
           )}
         </div>
       </div>
+
+      {/* Quick Stats */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-6">
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
+          <div className="flex items-center">
+            <div className="flex-shrink-0">
+              <Building className="h-8 w-8 text-primary-600 dark:text-primary-400" />
+            </div>
+            <div className="ml-4">
+              <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Total Rooms</p>
+              <p className="text-2xl font-semibold text-gray-900 dark:text-white">{stats.totalRooms}</p>
+            </div>
+          </div>
+        </div>
+
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
+          <div className="flex items-center">
+            <div className="flex-shrink-0">
+              <Calendar className="h-8 w-8 text-green-600 dark:text-green-400" />
+            </div>
+            <div className="ml-4">
+              <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Booked Today</p>
+              <p className="text-2xl font-semibold text-gray-900 dark:text-white">{stats.bookedToday}</p>
+            </div>
+          </div>
+        </div>
+
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
+          <div className="flex items-center">
+            <div className="flex-shrink-0">
+              <AlertCircle className="h-8 w-8 text-yellow-600 dark:text-yellow-400" />
+            </div>
+            <div className="ml-4">
+              <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Pending Approvals</p>
+              <p className="text-2xl font-semibold text-gray-900 dark:text-white">{stats.pendingApprovals}</p>
+            </div>
+          </div>
+        </div>
+
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
+          <div className="flex items-center">
+            <div className="flex-shrink-0">
+              <Clock className="h-8 w-8 text-blue-600 dark:text-blue-400" />
+            </div>
+            <div className="ml-4">
+              <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Active Now</p>
+              <p className="text-2xl font-semibold text-gray-900 dark:text-white">{stats.activeNow}</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Mobile Floating Action Button - only visible on mobile */}
+      <Link
+        to="/book"
+        className="lg:hidden fixed bottom-20 right-4 w-14 h-14 bg-primary-600 hover:bg-primary-700 text-white rounded-lg shadow-lg flex items-center justify-center transition-transform hover:scale-110 active:scale-95 z-50"
+        aria-label="Book a Room"
+      >
+        <PlusCircle size={28} />
+      </Link>
     </div>
   );
 }
