@@ -18,11 +18,6 @@ import {
   Shield
 } from 'lucide-react';
 
-interface SetupStatus {
-  needsSetup: boolean;
-  message: string;
-}
-
 interface CsvResult {
   success: boolean;
   imported: number;
@@ -34,7 +29,6 @@ export function SetupPage() {
   const { theme, toggleTheme } = useTheme();
   const [currentStep, setCurrentStep] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
-  const [setupStatus, setSetupStatus] = useState<SetupStatus | null>(null);
   
   // Superadmin form state
   const [superadminData, setSuperadminData] = useState({
@@ -61,7 +55,6 @@ export function SetupPage() {
   const checkSetupStatus = async () => {
     try {
       const response = await api.get('/setup/status');
-      setSetupStatus(response.data.data);
       if (!response.data.data.needsSetup) {
         navigate('/login');
       }
