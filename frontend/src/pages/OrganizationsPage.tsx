@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
-import { Building2, Plus, Edit2, Trash2, Users, DoorOpen, CheckCircle, XCircle } from 'lucide-react';
+import { Building2, Plus, Edit2, Trash2, Users, DoorOpen, CheckCircle, XCircle, Upload, Download, FileSpreadsheet } from 'lucide-react';
 import { organizationAPI } from '../utils/api';
+import api from '../utils/api';
 import { Organization } from '../types';
 
 export function OrganizationsPage() {
@@ -10,6 +11,12 @@ export function OrganizationsPage() {
   const [editingOrg, setEditingOrg] = useState<Organization | null>(null);
   const [formData, setFormData] = useState({ name: '', description: '' });
   const [error, setError] = useState('');
+
+  // CSV Import states
+  const [showImportModal, setShowImportModal] = useState(false);
+  const [csvFile, setCsvFile] = useState<File | null>(null);
+  const [importLoading, setImportLoading] = useState(false);
+  const [importResult, setImportResult] = useState<{ success: boolean; imported: number; errors: string[] } | null>(null);
 
   useEffect(() => {
     fetchOrganizations();
@@ -82,6 +89,59 @@ export function OrganizationsPage() {
     setIsModalOpen(true);
   };
 
+  const downloadTemplate = () => {
+    const csvContent = `name,description
+IT Department,Information Technology Department
+HR Department,Human Resources Department
+Finance Department,Finance and Accounting Department`;
+    
+    const blob = new Blob([csvContent], { type: 'text/csv' });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'organizations_template.csv';
+    a.click();
+    window.URL.revokeObjectURL(url);
+  };
+
+  const handleCsvImport = async () => {
+    if (!csvFile) return;
+
+    setImportLoading(true);
+    setImportResult(null);
+
+    const formData = new FormData();
+    formData.append('file', csvFile);
+
+    try {
+      const response = await api.post('/api/setup/import/organizations', formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data'
+        }
+      });
+      
+      setImportResult(response.data.data);
+      if (response.data.success) {
+        fetchOrganizations(); // Refresh list
+        setTimeout(() => {
+          if (response.data.data?.imported > 0) {
+            setShowImportModal(false);
+            setCsvFile(null);
+            setImportResult(null);
+          }
+        }, 2000);
+      }
+    } catch (err: any) {
+      setImportResult({
+        success: false,
+        imported: 0,
+        errors: [err.response?.data?.message || 'Import failed']
+      });
+    } finally {
+      setImportLoading(false);
+    }
+  };
+
   if (isLoading) {
     return (
       <div className="flex justify-center items-center h-64">
@@ -99,13 +159,22 @@ export function OrganizationsPage() {
             Manage organizations and their resources
           </p>
         </div>
-        <button
-          onClick={openCreateModal}
-          className="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500"
-        >
-          <Plus size={20} className="mr-2" />
-          Add Organization
-        </button>
+        <div className="flex space-x-3">
+          <button
+            onClick={() => setShowImportModal(true)}
+            className="inline-flex items-center px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500"
+          >
+            <Upload size={20} className="mr-2" />
+            Import CSV
+          </button>
+          <button
+            onClick={openCreateModal}
+            className="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500"
+          >
+            <Plus size={20} className="mr-2" />
+            Add Organization
+          </button>
+        </div>
       </div>
 
       {/* Organizations Grid */}
@@ -240,6 +309,106 @@ export function OrganizationsPage() {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* CSV Import Modal */}
+      {showImportModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-lg w-full max-h-[90vh] overflow-y-auto">
+            <div className="p-6">
+              <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-4 flex items-center">
+                <Upload className="h-5 w-5 mr-2" />
+                Import Organizations from CSV
+              </h2>
+
+              {importResult && (
+                <div className={`mb-4 p-3 rounded-md text-sm ${
+                  importResult.success 
+                    ? 'bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-300' 
+                    : 'bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-300'
+                }`}>
+                  <p className="font-medium">
+                    {importResult.success 
+                      ? `Successfully imported ${importResult.imported} organizations` 
+                      : 'Import failed'}
+                  </p>
+                  {importResult.errors.length > 0 && (
+                    <ul className="mt-2 list-disc list-inside text-xs">
+                      {importResult.errors.map((error, idx) => (
+                        <li key={idx}>{error}</li>
+                      ))}
+                    </ul>
+                  )}
+                </div>
+              )}
+
+              <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-md p-4 mb-4">
+                <div className="flex items-start">
+                  <FileSpreadsheet className="h-5 w-5 text-blue-500 mr-2 mt-0.5" />
+                  <div>
+                    <p className="text-blue-800 dark:text-blue-400 font-medium mb-2">
+                      CSV Format Required:
+                    </p>
+                    <code className="text-sm bg-blue-100 dark:bg-blue-800 px-2 py-1 rounded">
+                      name,description
+                    </code>
+                    <button
+                      onClick={downloadTemplate}
+                      className="mt-2 text-blue-600 dark:text-blue-400 hover:underline text-sm flex items-center"
+                    >
+                      <Download className="h-4 w-4 mr-1" />
+                      Download Template
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              <div className="space-y-4">
+                <div className="border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg p-6 text-center hover:border-primary-500 transition-colors">
+                  <input
+                    type="file"
+                    accept=".csv"
+                    onChange={(e) => setCsvFile(e.target.files?.[0] || null)}
+                    className="hidden"
+                    id="org-csv-upload"
+                  />
+                  <label
+                    htmlFor="org-csv-upload"
+                    className="cursor-pointer flex flex-col items-center"
+                  >
+                    <Upload className="h-12 w-12 text-gray-400 mb-2" />
+                    <span className="text-gray-600 dark:text-gray-400">
+                      {csvFile ? csvFile.name : 'Click to upload CSV file'}
+                    </span>
+                  </label>
+                </div>
+
+                {csvFile && (
+                  <button
+                    onClick={handleCsvImport}
+                    disabled={importLoading}
+                    className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 disabled:opacity-50"
+                  >
+                    {importLoading ? 'Importing...' : 'Import Organizations'}
+                  </button>
+                )}
+              </div>
+
+              <div className="flex justify-end space-x-3 pt-4 border-t border-gray-200 dark:border-gray-700 mt-4">
+                <button
+                  onClick={() => {
+                    setShowImportModal(false);
+                    setCsvFile(null);
+                    setImportResult(null);
+                  }}
+                  className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600"
+                >
+                  Close
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       )}
