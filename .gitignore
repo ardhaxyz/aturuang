@@ -41,3 +41,7 @@ postgres_data/
 # Backup files
 *.sql.backup
 *.sql.gz
+
+# AI/Claude files
+claude.md
+CLAUDE.md
