@@ -93,3 +93,13 @@ model User {
   @@index([role])
   @@index([isActive])
 }
+
+// System Settings for welcome box customization and other configurations
+model SystemSetting {
+  id          String   @id @default(cuid())
+  key         String   @unique
+  value       String   // JSON string
+  description String?
+  updatedAt   DateTime @updatedAt
+  updatedBy   String?  // User ID who last updated
+}

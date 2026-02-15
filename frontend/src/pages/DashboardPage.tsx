@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Calendar, Clock, CheckCircle, XCircle, AlertCircle, Building, PlusCircle } from 'lucide-react';
-import { bookingAPI, roomAPI } from '../utils/api';
+import { bookingAPI, roomAPI, settingsAPI } from '../utils/api';
 import { Booking, Room } from '../types';
 import { useAuth } from '../contexts/AuthContext';
 
@@ -16,6 +16,34 @@ export function DashboardPage() {
   const [todayBookings, setTodayBookings] = useState<Booking[]>([]);
   const [_rooms, setRooms] = useState<Room[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+
+  // Welcome box settings
+  const [welcomeSettings, setWelcomeSettings] = useState({
+    welcomeTitle: 'Welcome to Aturuang',
+    welcomeEmoji: '📅',
+    welcomeSubtitle: 'Meeting Room Booking System',
+    welcomeDescription: 'Book meeting rooms easily with our modern booking system. Select a room, choose your time, and get approval from your admin.',
+  });
+
+  useEffect(() => {
+    fetchSettings();
+  }, []);
+
+  const fetchSettings = async () => {
+    try {
+      const response = await settingsAPI.getAll();
+      if (response.success && response.data) {
+        setWelcomeSettings({
+          welcomeTitle: response.data.welcomeTitle || 'Welcome to Aturuang',
+          welcomeEmoji: response.data.welcomeEmoji || '📅',
+          welcomeSubtitle: response.data.welcomeSubtitle || 'Meeting Room Booking System',
+          welcomeDescription: response.data.welcomeDescription || 'Book meeting rooms easily with our modern booking system. Select a room, choose your time, and get approval from your admin.',
+        });
+      }
+    } catch (error) {
+      console.error('Failed to fetch settings:', error);
+    }
+  };
 
   useEffect(() => {
     fetchDashboardData();
@@ -114,10 +142,10 @@ export function DashboardPage() {
         {/* Welcome Box - takes 2 columns on desktop */}
         <div className="lg:col-span-2 bg-gradient-to-r from-primary-50 to-primary-100 dark:from-primary-900/30 dark:to-primary-800/30 rounded-lg shadow p-6">
           <div className="flex items-center gap-3">
-            <span className="text-4xl animate-bounce">👋</span>
+            <span className="text-4xl">{welcomeSettings.welcomeEmoji}</span>
             <div>
               <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
-                Hello, {user?.username || 'User'}!
+                {welcomeSettings.welcomeTitle}
               </h1>
               {user?.organization && (
                 <p className="text-gray-600 dark:text-gray-400 mt-1">
@@ -126,8 +154,11 @@ export function DashboardPage() {
               )}
             </div>
           </div>
-          <p className="mt-3 text-gray-700 dark:text-gray-300">
-            Welcome to Aturuang! Manage your meeting room bookings efficiently.
+          <p className="mt-1 text-lg text-primary-700 dark:text-primary-300 font-medium">
+            {welcomeSettings.welcomeSubtitle}
+          </p>
+          <p className="mt-2 text-gray-700 dark:text-gray-300">
+            {welcomeSettings.welcomeDescription}
           </p>
         </div>
 

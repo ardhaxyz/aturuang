@@ -234,4 +234,31 @@ export const bookingAPI = {
   },
 };
 
+export const settingsAPI = {
+  getAll: async () => {
+    const response = await api.get<ApiResponse<{
+      welcomeTitle: string;
+      welcomeEmoji: string;
+      welcomeSubtitle: string;
+      welcomeDescription: string;
+    }>>('/api/settings');
+    return response.data;
+  },
+
+  update: async (data: {
+    welcomeTitle: string;
+    welcomeEmoji: string;
+    welcomeSubtitle: string;
+    welcomeDescription: string;
+  }) => {
+    const response = await api.put<ApiResponse<{
+      welcomeTitle: string;
+      welcomeEmoji: string;
+      welcomeSubtitle: string;
+      welcomeDescription: string;
+    }>>('/api/settings', data);
+    return response.data;
+  },
+};
+
 export default api;

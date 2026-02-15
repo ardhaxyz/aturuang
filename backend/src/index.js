@@ -10,6 +10,7 @@ const organizationRoutes = require('./routes/organizationRoutes');
 const roomRoutes = require('./routes/roomRoutes');
 const userRoutes = require('./routes/userRoutes');
 const bookingRoutes = require('./routes/bookingRoutes');
+const settingsRoutes = require('./routes/settingsRoutes');
 
 // Initialize Express app
 const app = express();
@@ -45,6 +46,7 @@ apiRouter.use('/organizations', organizationRoutes);
 apiRouter.use('/rooms', roomRoutes);
 apiRouter.use('/users', userRoutes);
 apiRouter.use('/bookings', bookingRoutes);
+apiRouter.use('/settings', settingsRoutes);
 
 // Mount API router to app
 app.use('/api', apiRouter);
