@@ -2,19 +2,22 @@ import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { useTheme } from '../contexts/ThemeContext';
 import { useState } from 'react';
-import { 
-  Calendar, 
-  Home, 
-  PlusCircle, 
-  CheckSquare, 
-  LogOut, 
-  Users, 
-  Moon, 
-  Sun, 
-  Building2, 
-  Settings, 
+import {
+  Calendar,
+  Home,
+  PlusCircle,
+  LogOut,
+  User,
+  Building,
+  Moon,
+  Sun,
+  Building2,
+  Settings,
   Menu,
-  X
+  X,
+  Coffee,
+  Snowflake,
+  Bot
 } from 'lucide-react';
 
 interface LayoutProps {
@@ -30,14 +33,14 @@ export function Layout({ children }: LayoutProps) {
   const mainNavItems = [
     { path: '/', label: 'Dashboard', icon: Home },
     { path: '/book', label: 'Book', icon: PlusCircle },
-    { path: '/rooms', label: 'Rooms', icon: Users },
+    { path: '/rooms', label: 'Rooms', icon: Building },
     { path: '/calendar', label: 'Calendar', icon: Calendar },
   ];
 
   const adminNavItems = [
     ...(isSuperadmin ? [{ path: '/admin/organizations', label: 'Organizations', icon: Building2 }] : []),
     { path: '/admin/rooms', label: 'Manage Rooms', icon: Settings },
-    { path: '/admin/users', label: 'Manage Users', icon: Users },
+    { path: '/admin/users', label: 'Manage Users', icon: User },
   ];
 
   const isActive = (path: string) => location.pathname === path || location.pathname.startsWith(path + '/');
@@ -46,7 +49,7 @@ export function Layout({ children }: LayoutProps) {
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex flex-col transition-colors duration-200">
       {/* Header */}
       <header className="bg-white dark:bg-gray-800 shadow-sm sticky top-0 z-50 transition-colors duration-200">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             {/* Logo */}
             <div className="flex items-center">
@@ -86,7 +89,7 @@ export function Layout({ children }: LayoutProps) {
                       : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white'
                   }`}
                 >
-                  <CheckSquare size={18} className="mr-2" />
+                  <Settings size={18} className="mr-2" />
                   Admin
                 </Link>
               )}
@@ -197,7 +200,19 @@ export function Layout({ children }: LayoutProps) {
                 <div className="text-xs text-gray-500 dark:text-gray-400 space-y-1">
                   <p>© 2026 Aturuang</p>
                   <p>for Coordinating Ministry for Food Affairs</p>
-                  <p className="pt-1">Built with <span className="grayscale">☕</span> + <span className="grayscale">❄️</span> + <span className="grayscale">🤖</span> by ardhaxyz</p>
+                  <p className="pt-1 flex items-center gap-1">
+                    Built with{' '}
+                    <Coffee className="h-3 w-3" />{' '}+{' '}<Snowflake className="h-3 w-3" />{' '}+{' '}<Bot className="h-3 w-3" />{' '}
+                    by{' '}
+                    <a
+                      href="https://github.com/ardhaxyz"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 transition-colors"
+                    >
+                      ardhaxyz
+                    </a>
+                  </p>
                 </div>
               </div>
             </div>
@@ -246,13 +261,21 @@ export function Layout({ children }: LayoutProps) {
 
       {/* Desktop Footer - Hidden on Mobile */}
       <footer className="hidden md:block bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 mt-auto transition-colors duration-200">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
           <div className="flex flex-col sm:flex-row justify-between items-center text-sm text-gray-600 dark:text-gray-400">
             <p>
               © 2026 Aturuang for Coordinating Ministry for Food Affairs
             </p>
             <p className="mt-2 sm:mt-0 flex items-center gap-1">
-              Built with <span className="grayscale">☕</span> + <span className="grayscale">❄️</span> + <span className="grayscale">🤖</span> by ardhaxyz
+              Built with <Coffee className="h-4 w-4 inline" /> + <Snowflake className="h-4 w-4 inline" /> + <Bot className="h-4 w-4 inline" /> by{' '}
+              <a
+                href="https://github.com/ardhaxyz"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-300 transition-colors"
+              >
+                ardhaxyz
+              </a>
             </p>
           </div>
         </div>
