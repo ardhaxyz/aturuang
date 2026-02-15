@@ -4,7 +4,7 @@
 
 ![License](https://img.shields.io/badge/license-MIT-blue.svg)
 ![Docker](https://img.shields.io/badge/docker-ready-brightgreen.svg)
-![Version](https://img.shields.io/badge/version-0.3.0-blue.svg)
+![Version](https://img.shields.io/badge/version-0.4.1-blue.svg)
 
 ## 🌟 Features
 
@@ -322,6 +322,20 @@ docker compose up -d --build
 ```
 
 ## 📝 Changelog
+
+### Version 0.4.1
+- ✅ Dashboard Quick Actions simplified - removed redundant buttons (Book a Room only)
+- ✅ Mobile FAB shape updated to square-rounded (rounded-lg) for UI consistency
+- ✅ Mobile stats grid changed to 2 columns (reduced vertical scrolling)
+- ✅ Overall dashboard layout more compact and efficient
+
+### Version 0.4.0
+- ✅ Frontend design unification across all pages
+- ✅ Consistent card-based layout with rounded-lg borders
+- ✅ Improved color scheme with primary colors (blue-600)
+- ✅ Enhanced dark mode support with proper contrast
+- ✅ Mobile-responsive navigation with icon-only bottom nav
+- ✅ Refined typography and spacing throughout
 
 ### Version 0.3.0
 - ✅ Multi-tenant organization system
