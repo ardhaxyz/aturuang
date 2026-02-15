@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Users, Monitor, Video, Volume2, Thermometer, Wifi, Globe, Lock, DoorOpen, Plus } from 'lucide-react';
+import { Users, Monitor, Video, Volume2, Thermometer, Wifi, Globe, Building2, DoorOpen, Plus } from 'lucide-react';
 import { roomAPI } from '../utils/api';
 import { Room } from '../types';
 import { useAuth } from '../contexts/AuthContext';
@@ -113,15 +113,15 @@ export function RoomsPage() {
                 </span>
               </div>
 
-              {/* Public/Private badge */}
+              {/* Public/Organization badge */}
               <div className="absolute top-2 left-2">
                 <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium backdrop-blur-sm ${
-                  room.isPublic 
-                    ? 'bg-green-500/80 text-white' 
+                  room.isPublic
+                    ? 'bg-purple-500/80 text-white'
                     : 'bg-blue-500/80 text-white'
                 }`}>
-                  {room.isPublic ? <Globe className="h-3 w-3 mr-1" /> : <Lock className="h-3 w-3 mr-1" />}
-                  {room.isPublic ? 'Public' : 'Private'}
+                  {room.isPublic ? <Globe className="h-3 w-3 mr-1" /> : <Building2 className="h-3 w-3 mr-1" />}
+                  {room.isPublic ? 'Public' : (room.organization?.name || 'Organization')}
                 </span>
               </div>
             </div>
@@ -206,11 +206,11 @@ export function RoomsPage() {
                       {selectedRoom.capacity} people
                     </span>
                     <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                      selectedRoom.isPublic 
-                        ? 'bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-300' 
+                      selectedRoom.isPublic
+                        ? 'bg-purple-100 dark:bg-purple-900/30 text-purple-800 dark:text-purple-300'
                         : 'bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-300'
                     }`}>
-                      {selectedRoom.isPublic ? <><Globe size={12} className="mr-1" /> Public</> : <><Lock size={12} className="mr-1" /> Private</>}
+                      {selectedRoom.isPublic ? <><Globe size={12} className="mr-1" /> Public</> : <><Building2 size={12} className="mr-1" /> {selectedRoom.organization?.name || 'Organization'}</>}
                     </span>
                   </div>
                 </div>

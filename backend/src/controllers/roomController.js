@@ -12,31 +12,13 @@ const prisma = new PrismaClient();
  * Helper: Get accessible room IDs for a user
  */
 async function getAccessibleRoomIds(user) {
-  if (user.role === 'superadmin') {
-    // Superadmin can see all rooms
-    const rooms = await prisma.room.findMany({
-      where: { isActive: true },
-      select: { id: true },
-    });
-    return rooms.map(r => r.id);
-  }
-
-  if (user.role === 'org_admin' || user.role === 'user') {
-    // Can see public rooms + own org rooms
-    const rooms = await prisma.room.findMany({
-      where: {
-        isActive: true,
-        OR: [
-          { isPublic: true },
-          { organizationId: user.organizationId },
-        ],
-      },
-      select: { id: true },
-    });
-    return rooms.map(r => r.id);
-  }
-
-  return [];
+  // All users can see ALL active rooms
+  // Access control is enforced at booking creation time
+  const rooms = await prisma.room.findMany({
+    where: { isActive: true },
+    select: { id: true },
+  });
+  return rooms.map(r => r.id);
 }
 
 /**
@@ -48,21 +30,11 @@ async function getAllRooms(req, res) {
     const user = req.user;
     let where = { isActive: true };
 
-    // Filter by organization access
-    if (user.role !== 'superadmin') {
-      // Fetch fresh organizationId from database (in case token is stale)
-      const freshUser = await prisma.user.findUnique({
-        where: { id: user.userId },
-        select: { organizationId: true },
-      });
-      
-      const organizationId = freshUser?.organizationId || user.organizationId;
-      
-      where.OR = [
-        { isPublic: true },
-        { organizationId: organizationId },
-      ];
-    }
+    // NO filtering needed - all users can see ALL rooms
+    // Superadmin: ALL rooms
+    // Org Admin: ALL rooms (can see all org rooms)
+    // User: ALL rooms (can see all org rooms, but can only book public + own org rooms)
+    // Access control is enforced at booking creation time, not here
 
     const rooms = await prisma.room.findMany({
       where,
