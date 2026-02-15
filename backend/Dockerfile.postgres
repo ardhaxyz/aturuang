@@ -1,0 +1,11 @@
+FROM postgres:15-alpine
+
+# Set environment variables
+ENV POSTGRES_DB=aturuang
+ENV POSTGRES_USER=aturuang
+
+# Expose PostgreSQL port
+EXPOSE 5432
+
+# Use default PostgreSQL entrypoint
+CMD ["postgres"]

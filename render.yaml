@@ -1,14 +1,40 @@
+# Aturuang - Meeting Room Booking System
+# Render Blueprint Configuration
+
 services:
+  # PostgreSQL Database Service
+  - type: pserv
+    name: aturuang-postgres
+    runtime: docker
+    plan: free
+    branch: master
+    dockerContext: .
+    dockerfilePath: ./backend/Dockerfile.postgres
+    envVars:
+      - key: POSTGRES_DB
+        value: aturuang
+      - key: POSTGRES_USER
+        value: aturuang
+      - key: POSTGRES_PASSWORD
+        generateValue: true
+      - key: PGDATA
+        value: /var/lib/postgresql/data/pgdata
+    disk:
+      name: postgres-data
+      mountPath: /var/lib/postgresql/data
+      sizeGB: 1
+
+  # Backend Web Service  
   - type: web
     name: aturuang-backend
     runtime: node
     plan: free
     branch: master
-    buildCommand: cd backend && npm install && npx prisma generate
-    startCommand: cd backend && npx prisma migrate deploy && npm start
+    buildCommand: cd backend && npm install && npx prisma generate && npx prisma migrate deploy
+    startCommand: cd backend && npm start
     envVars:
       - key: DATABASE_URL
-        value: file:./prisma/dev.db
+        sync: false  # Will be set automatically after postgres is created
       - key: JWT_SECRET
         generateValue: true
       - key: FRONTEND_URL
