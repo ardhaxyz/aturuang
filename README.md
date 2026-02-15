@@ -283,7 +283,29 @@ npm run seed
 
 ## 📦 Deployment
 
-### Production Deployment
+### Quick Deploy with Pre-built Images (Recommended)
+
+We use GitHub Actions to automatically build and push Docker images to GitHub Container Registry on every merge to master.
+
+**Deploy to production:**
+```bash
+# Pull pre-built images from GitHub Container Registry
+docker compose -f docker-compose.prod.yml pull
+
+# Start services with pre-built images
+docker compose -f docker-compose.prod.yml up -d
+
+# Update environment variables in docker-compose.prod.yml before starting:
+# - JWT_SECRET (use strong random string)
+# - FRONTEND_URL (your production domain)
+# - GUEST_PASSWORD and ADMIN_PASSWORD
+```
+
+**Images available at:**
+- Backend: `ghcr.io/ardhaxyz/aturuang-backend:latest`
+- Frontend: `ghcr.io/ardhaxyz/aturuang-frontend:latest`
+
+### Build Locally (Development)
 
 1. **Update environment variables**
    - Change `JWT_SECRET` to a secure random string
