@@ -223,6 +223,11 @@ export const bookingAPI = {
     return response.data;
   },
 
+  revertToPending: async (id: string) => {
+    const response = await api.patch<ApiResponse<{ booking: Booking }>>(`/api/bookings/${id}/pending`);
+    return response.data;
+  },
+
   delete: async (id: string) => {
     const response = await api.delete<ApiResponse<null>>(`/api/bookings/${id}`);
     return response.data;

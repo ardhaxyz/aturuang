@@ -101,6 +101,21 @@ export function AdminDashboardPage() {
     }
   };
 
+  const handleRevertToPending = async (id: string) => {
+    try {
+      const response = await bookingAPI.revertToPending(id);
+      if (response.success) {
+        // Refresh bookings
+        const bookingsResponse = await bookingAPI.getAll({ limit: 1000 });
+        if (bookingsResponse.success && bookingsResponse.data?.bookings) {
+          setBookings(bookingsResponse.data.bookings);
+        }
+      }
+    } catch (error) {
+      console.error('Failed to revert booking:', error);
+    }
+  };
+
   const getStatusIcon = (status: string) => {
     switch (status) {
       case 'approved':
@@ -301,6 +316,18 @@ export function AdminDashboardPage() {
                         title="Reject"
                       >
                         <XCircle className="h-5 w-5" />
+                      </button>
+                    </div>
+                  )}
+                  
+                  {booking.status !== 'pending' && (
+                    <div className="ml-4">
+                      <button
+                        onClick={() => handleRevertToPending(booking.id)}
+                        className="p-2 text-yellow-600 hover:bg-yellow-50 dark:hover:bg-yellow-900/20 rounded-full"
+                        title="Back to Pending"
+                      >
+                        <Clock className="h-5 w-5" />
                       </button>
                     </div>
                   )}

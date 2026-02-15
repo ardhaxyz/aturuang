@@ -49,7 +49,7 @@ export function Layout({ children }: LayoutProps) {
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex flex-col transition-colors duration-200">
       {/* Header */}
       <header className="bg-white dark:bg-gray-800 shadow-sm sticky top-0 z-50 transition-colors duration-200">
-        <div className="max-w-xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             {/* Logo */}
             <div className="flex items-center">
@@ -217,7 +217,7 @@ export function Layout({ children }: LayoutProps) {
       </header>
 
       {/* Main Content */}
-      <main className="flex-grow max-w-xl mx-auto px-4 sm:px-6 lg:px-8 py-8 w-full pb-20 md:pb-8">
+      <main className="flex-grow max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8 w-full pb-20 md:pb-8">
         {children}
       </main>
 
@@ -257,7 +257,7 @@ export function Layout({ children }: LayoutProps) {
 
       {/* Desktop Footer - Hidden on Mobile */}
       <footer className="hidden md:block bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 mt-auto transition-colors duration-200">
-        <div className="max-w-xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+        <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
           <div className="flex flex-col sm:flex-row justify-between items-center text-sm text-gray-600 dark:text-gray-400">
             <p>
               © 2026 Aturuang for Coordinating Ministry for Food Affairs
