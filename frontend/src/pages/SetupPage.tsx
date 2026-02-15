@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTheme } from '../contexts/ThemeContext';
-import { api } from '../utils/api';
+import api from '../utils/api';
 import { 
   Calendar, 
   CheckCircle, 
