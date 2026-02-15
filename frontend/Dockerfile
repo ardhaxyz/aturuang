@@ -20,8 +20,11 @@ RUN npm run build
 # Stage 2: Production
 FROM nginx:alpine
 
+# Build argument for nginx config (use local config for Docker Compose)
+ARG NGINX_CONFIG=nginx.conf
+
 # Copy custom nginx config
-COPY nginx.conf /etc/nginx/conf.d/default.conf
+COPY ${NGINX_CONFIG} /etc/nginx/conf.d/default.conf
 
 # Copy built assets from builder stage
 COPY --from=builder /app/dist /usr/share/nginx/html
