@@ -65,7 +65,7 @@ app.get('/health', (req, res) => {
 app.get('/', (req, res) => {
   res.json({
     message: 'Aturuang API - Meeting Room Management System',
-    version: '2.0.0',
+    version: '0.5.0',
     description: 'Multi-tenant organization-based meeting room booking system',
     endpoints: {
       setup: '/api/setup',
