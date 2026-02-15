@@ -54,7 +54,7 @@ export function SetupPage() {
 
   const checkSetupStatus = async () => {
     try {
-      const response = await api.get('/setup/status');
+      const response = await api.get('/api/setup/status');
       if (!response.data.data.needsSetup) {
         navigate('/login');
       }
@@ -80,7 +80,7 @@ export function SetupPage() {
     }
 
     try {
-      await api.post('/setup', {
+      await api.post('/api/setup', {
         username: superadminData.username,
         password: superadminData.password
       });
@@ -101,7 +101,7 @@ export function SetupPage() {
     formData.append('file', orgCsvFile);
 
     try {
-      const response = await api.post('/setup/import/organizations', formData, {
+      const response = await api.post('/api/setup/import/organizations', formData, {
         headers: {
           'Content-Type': 'multipart/form-data'
         }
@@ -128,7 +128,7 @@ export function SetupPage() {
     formData.append('file', userCsvFile);
 
     try {
-      const response = await api.post('/setup/import/users', formData, {
+      const response = await api.post('/api/setup/import/users', formData, {
         headers: {
           'Content-Type': 'multipart/form-data'
         }

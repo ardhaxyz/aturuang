@@ -17,7 +17,7 @@ export function SetupRoute({ children }: { children: React.ReactNode }) {
 
   const checkSetupStatus = async () => {
     try {
-      const response = await api.get('/setup/status');
+      const response = await api.get('/api/setup/status');
       setSetupStatus(response.data.data);
     } catch (error) {
       console.error('Failed to check setup status:', error);
