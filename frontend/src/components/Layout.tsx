@@ -49,7 +49,7 @@ export function Layout({ children }: LayoutProps) {
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex flex-col transition-colors duration-200">
       {/* Header */}
       <header className="bg-white dark:bg-gray-800 shadow-sm sticky top-0 z-50 transition-colors duration-200">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="max-w-xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             {/* Logo */}
             <div className="flex items-center">
@@ -97,25 +97,21 @@ export function Layout({ children }: LayoutProps) {
 
             {/* Right Side - User Info & Controls */}
             <div className="flex items-center space-x-2 sm:space-x-4">
-              {/* Mobile Hamburger */}
-              <button
-                onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-                className="md:hidden p-2 rounded-md text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
-              >
-                {mobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
-              </button>
-
-              <span className="hidden sm:block text-sm text-gray-600 dark:text-gray-400">
-                {user?.username}
-              </span>
-              
-              {/* Theme Toggle */}
+              {/* Theme Toggle - Swapped position with hamburger for mobile */}
               <button
                 onClick={toggleTheme}
-                className="p-2 rounded-md text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+                className="p-2 rounded-md text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors order-1 md:order-none"
                 title={theme === 'light' ? 'Switch to dark mode' : 'Switch to light mode'}
               >
                 {theme === 'light' ? <Moon size={18} /> : <Sun size={18} />}
+              </button>
+              
+              {/* Mobile Hamburger */}
+              <button
+                onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+                className="md:hidden p-2 rounded-md text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors order-2 md:order-none"
+              >
+                {mobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
               </button>
 
               <button
@@ -221,7 +217,7 @@ export function Layout({ children }: LayoutProps) {
       </header>
 
       {/* Main Content */}
-      <main className="flex-grow max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8 w-full pb-20 md:pb-8">
+      <main className="flex-grow max-w-xl mx-auto px-4 sm:px-6 lg:px-8 py-8 w-full pb-20 md:pb-8">
         {children}
       </main>
 
@@ -261,7 +257,7 @@ export function Layout({ children }: LayoutProps) {
 
       {/* Desktop Footer - Hidden on Mobile */}
       <footer className="hidden md:block bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 mt-auto transition-colors duration-200">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+        <div className="max-w-xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
           <div className="flex flex-col sm:flex-row justify-between items-center text-sm text-gray-600 dark:text-gray-400">
             <p>
               © 2026 Aturuang for Coordinating Ministry for Food Affairs

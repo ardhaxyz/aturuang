@@ -282,7 +282,7 @@ export function AdminDashboardPage() {
                       {booking.room?.name} • {booking.date} • {booking.startTime} - {booking.endTime}
                     </div>
                     <div className="mt-1 text-sm text-gray-500 dark:text-gray-400">
-                      By: {booking.bookerName}
+                      By: {booking.bookerName} {booking.room?.organization?.name && `• ${booking.room.organization.name}`}
                     </div>
                   </div>
                   
