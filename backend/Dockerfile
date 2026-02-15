@@ -1,4 +1,4 @@
-# Multi-stage build for Meeting Room Dashboard Backend
+# Multi-stage build for Aturuang Backend
 
 # Stage 1: Build
 FROM node:18-alpine AS builder
@@ -6,7 +6,7 @@ FROM node:18-alpine AS builder
 WORKDIR /app
 
 # Install build dependencies
-RUN apk add --no-cache python3 make g++ postgresql-client
+RUN apk add --no-cache python3 make g++ openssl
 
 # Copy package files
 COPY package.json package-lock.json* ./
@@ -23,14 +23,11 @@ RUN npx prisma generate
 # Create .env file from example
 COPY .env.example .env
 
-# Build and prepare
-RUN npm run build
-
 # Stage 2: Production
 FROM node:18-alpine
 
 # Install runtime dependencies
-RUN apk add --no-cache python3 make g++ postgresql-client
+RUN apk add --no-cache python3 make g++ openssl
 
 WORKDIR /app
 
@@ -38,17 +35,27 @@ WORKDIR /app
 COPY package.json package-lock.json* ./
 
 # Install production dependencies only
-RUN npm ci --only=production
+RUN npm ci --omit=dev
 
 # Copy Prisma client
 COPY --from=builder /app/node_modules/.prisma ./node_modules/.prisma
 COPY --from=builder /app/node_modules/@prisma/ ./node_modules/@prisma/
 
-# Copy built files
-COPY --from=builder /app/dist ./dist
+# Copy source files
+COPY --from=builder /app/src ./src
 
-# Copy Prisma schema
-COPY prisma ./prisma
+# Copy Prisma schema, seed, and migrations
+COPY --from=builder /app/prisma ./prisma
+
+# Copy migrations folder explicitly
+COPY --from=builder /app/prisma/migrations ./prisma/migrations
+
+# Copy startup script
+COPY --from=builder /app/start.sh ./start.sh
+RUN chmod +x start.sh
+
+# Create uploads directory
+RUN mkdir -p uploads/rooms
 
 # Create non-root user
 RUN addgroup -g 1001 -S nodejs && \
@@ -65,5 +72,5 @@ EXPOSE 3001
 HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
   CMD node -e "require('http').get('http://localhost:3001/health', (r) => { process.exit(r.statusCode === 200 ? 0 : 1); }).on('error', () => process.exit(1))"
 
-# Start server
-CMD ["node", "dist/index.js"]
+# Start server with migrations
+CMD ["./start.sh"]

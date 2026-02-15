@@ -4,7 +4,6 @@ npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
-package-lock.json
 
 # Environment files
 .env
@@ -33,7 +32,6 @@ coverage
 # Prisma
 /prisma/*.db
 /prisma/*.db-journal
-/prisma/migrations/*.sql
 
 # Git
 .git

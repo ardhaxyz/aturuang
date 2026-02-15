@@ -16,17 +16,17 @@ const { validate, bookingSchema, approvalSchema } = require('../utils/validation
  */
 
 // GET /api/bookings - Get all bookings (protected)
-router.get('/bookings', authenticateToken, getAllBookings);
+router.get('/', authenticateToken, getAllBookings);
 
 // GET /api/bookings/:id - Get booking by ID (protected)
-router.get('/bookings/:id', authenticateToken, getBookingById);
+router.get('/:id', authenticateToken, getBookingById);
 
 // POST /api/bookings - Create new booking (protected)
-router.post('/bookings', authenticateToken, validate(bookingSchema), createBooking);
+router.post('/', authenticateToken, validate(bookingSchema), createBooking);
 
 // PATCH /api/bookings/:id/approve - Approve/reject booking (admin only)
 router.patch(
-  '/bookings/:id/approve',
+  '/:id/approve',
   authenticateToken,
   requireAdmin,
   validate(approvalSchema),
@@ -34,6 +34,6 @@ router.patch(
 );
 
 // DELETE /api/bookings/:id - Delete booking (admin only)
-router.delete('/bookings/:id', authenticateToken, requireAdmin, deleteBooking);
+router.delete('/:id', authenticateToken, requireAdmin, deleteBooking);
 
 module.exports = router;

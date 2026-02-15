@@ -1,4 +1,3 @@
-import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { ProtectedRoute } from './components/ProtectedRoute';
@@ -8,10 +7,14 @@ import { DashboardPage } from './pages/DashboardPage';
 import { BookPage } from './pages/BookPage';
 import { RoomsPage } from './pages/RoomsPage';
 import { CalendarPage } from './pages/CalendarPage';
-import { AdminPage } from './pages/AdminPage';
+
+import { OrganizationsPage } from './pages/OrganizationsPage';
+import { RoomManagementPage } from './pages/RoomManagementPage';
+import { UserManagementPage } from './pages/UserManagementPage';
+import { AdminDashboardPage } from './pages/AdminDashboardPage';
 
 function AppRoutes() {
-  const { user } = useAuth();
+  const { user, isSuperadmin } = useAuth();
 
   return (
     <Routes>
@@ -53,10 +56,38 @@ function AppRoutes() {
         </ProtectedRoute>
       } />
 
+      {/* Admin Dashboard - Main control page */}
       <Route path="/admin" element={
         <ProtectedRoute requireAdmin>
           <Layout>
-            <AdminPage />
+            <AdminDashboardPage />
+          </Layout>
+        </ProtectedRoute>
+      } />
+
+      {/* Admin - Organizations (Superadmin only) */}
+      <Route path="/admin/organizations" element={
+        <ProtectedRoute requireAdmin>
+          <Layout>
+            {isSuperadmin ? <OrganizationsPage /> : <Navigate to="/admin/rooms" replace />}
+          </Layout>
+        </ProtectedRoute>
+      } />
+
+      {/* Admin - Room Management */}
+      <Route path="/admin/rooms" element={
+        <ProtectedRoute requireAdmin>
+          <Layout>
+            <RoomManagementPage />
+          </Layout>
+        </ProtectedRoute>
+      } />
+
+      {/* Admin - User Management */}
+      <Route path="/admin/users" element={
+        <ProtectedRoute requireAdmin>
+          <Layout>
+            <UserManagementPage />
           </Layout>
         </ProtectedRoute>
       } />

@@ -1,10 +1,14 @@
 require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
+const path = require('path');
 
 // Import routes
+const setupRoutes = require('./routes/setupRoutes');
 const authRoutes = require('./routes/authRoutes');
+const organizationRoutes = require('./routes/organizationRoutes');
 const roomRoutes = require('./routes/roomRoutes');
+const userRoutes = require('./routes/userRoutes');
 const bookingRoutes = require('./routes/bookingRoutes');
 
 // Initialize Express app
@@ -12,11 +16,14 @@ const app = express();
 
 // Middleware
 app.use(cors({
-  origin: process.env.FRONTEND_URL || 'http://localhost:3000',
+  origin: process.env.FRONTEND_URL || 'http://localhost',
   credentials: true,
 }));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+
+// Serve static files (uploaded images)
+app.use('/uploads', express.static(path.join(__dirname, '..', 'uploads')));
 
 // Request logging middleware
 app.use((req, res, next) => {
@@ -24,10 +31,15 @@ app.use((req, res, next) => {
   next();
 });
 
+// Setup route (no authentication required, only works when no users exist)
+app.use('/api/setup', setupRoutes);
+
 // API Routes
-app.use('/api', authRoutes);
-app.use('/api', roomRoutes);
-app.use('/api', bookingRoutes);
+app.use('/api/auth', authRoutes);
+app.use('/api/organizations', organizationRoutes);
+app.use('/api/rooms', roomRoutes);
+app.use('/api/users', userRoutes);
+app.use('/api/bookings', bookingRoutes);
 
 // Health check endpoint
 app.get('/health', (req, res) => {
@@ -41,14 +53,25 @@ app.get('/health', (req, res) => {
 // Root endpoint
 app.get('/', (req, res) => {
   res.json({
-    message: 'Meeting Room Dashboard API',
-    version: '1.0.0',
+    message: 'Aturuang API - Meeting Room Management System',
+    version: '2.0.0',
+    description: 'Multi-tenant organization-based meeting room booking system',
     endpoints: {
-      health: '/health',
+      setup: '/api/setup',
       auth: '/api/auth',
+      organizations: '/api/organizations',
       rooms: '/api/rooms',
+      users: '/api/users',
       bookings: '/api/bookings',
+      health: '/health',
     },
+    features: [
+      'Organization-based multi-tenancy',
+      'Role-based access control (superadmin, org_admin, user)',
+      'Room image uploads',
+      'Public and private rooms',
+      'Organization-based booking approval',
+    ],
   });
 });
 
@@ -75,6 +98,7 @@ app.listen(PORT, () => {
   console.log(`🚀 Server running on port ${PORT}`);
   console.log(`📚 Environment: ${process.env.NODE_ENV || 'development'}`);
   console.log(`🌐 Health check: http://localhost:${PORT}/health`);
+  console.log(`🏢 Multi-tenant organization system enabled`);
 });
 
 module.exports = app;

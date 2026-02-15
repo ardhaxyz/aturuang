@@ -65,12 +65,10 @@ function checkConflict(bookings, date, startTime, endTime, roomId) {
   const newStart = parseInt(startTime.split(':')[0]) * 60 + parseInt(startTime.split(':')[1]);
   const newEnd = parseInt(endTime.split(':')[0]) * 60 + parseInt(endTime.split(':')[1]);
 
-  const bookingDate = new Date(date).toDateString();
-
   for (const booking of bookings) {
     // Skip if same room, different date, already rejected, or same booking
     if (booking.roomId !== roomId) continue;
-    if (new Date(booking.date).toDateString() !== bookingDate) continue;
+    if (booking.date !== date) continue;
     if (booking.status === 'rejected') continue;
 
     const existingStart = parseInt(booking.startTime.split(':')[0]) * 60 + parseInt(booking.startTime.split(':')[1]);

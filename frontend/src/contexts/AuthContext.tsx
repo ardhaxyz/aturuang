@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { User } from '../types';
 import { authAPI } from '../utils/api';
 
@@ -6,9 +6,14 @@ interface AuthContextType {
   user: User | null;
   token: string | null;
   isLoading: boolean;
-  login: (password: string) => Promise<void>;
+  login: (username: string, password: string) => Promise<void>;
   logout: () => void;
+  isSuperadmin: boolean;
+  isOrgAdmin: boolean;
   isAdmin: boolean;
+  canManageRooms: boolean;
+  canManageUsers: boolean;
+  canManageOrganizations: boolean;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -54,10 +59,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  const login = async (password: string) => {
+  const login = async (username: string, password: string) => {
     setIsLoading(true);
     try {
-      const response = await authAPI.login(password);
+      const response = await authAPI.login(username, password);
       if (response.success && response.data) {
         const { token, user } = response.data;
         setToken(token);
@@ -82,10 +87,28 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     localStorage.removeItem('user');
   };
 
-  const isAdmin = user?.role === 'admin';
+  // Role checks
+  const isSuperadmin = user?.role === 'superadmin';
+  const isOrgAdmin = user?.role === 'org_admin';
+  const isAdmin = isSuperadmin || isOrgAdmin;
+  const canManageRooms = isSuperadmin || isOrgAdmin;
+  const canManageUsers = isSuperadmin || isOrgAdmin;
+  const canManageOrganizations = isSuperadmin;
 
   return (
-    <AuthContext.Provider value={{ user, token, isLoading, login, logout, isAdmin }}>
+    <AuthContext.Provider value={{ 
+      user, 
+      token, 
+      isLoading, 
+      login, 
+      logout, 
+      isSuperadmin,
+      isOrgAdmin,
+      isAdmin,
+      canManageRooms,
+      canManageUsers,
+      canManageOrganizations
+    }}>
       {children}
     </AuthContext.Provider>
   );

@@ -15,15 +15,15 @@
   }
 
   .btn-secondary {
-    @apply px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500;
+    @apply px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500;
   }
 
   .input-field {
-    @apply block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-primary-500 focus:border-primary-500 sm:text-sm;
+    @apply block w-full border border-gray-300 dark:border-gray-600 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-primary-500 focus:border-primary-500 sm:text-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-white;
   }
 
   .card {
-    @apply bg-white rounded-lg shadow p-6;
+    @apply bg-white dark:bg-gray-800 rounded-lg shadow p-6;
   }
 }
 
@@ -33,7 +33,7 @@
 }
 
 .fc .fc-toolbar-title {
-  @apply text-lg font-semibold text-gray-900;
+  @apply text-lg font-semibold text-gray-900 dark:text-white;
 }
 
 .fc .fc-button {
@@ -46,7 +46,7 @@
 }
 
 .fc .fc-daygrid-day.fc-day-today {
-  @apply bg-primary-50;
+  @apply bg-primary-50 dark:bg-primary-900/30;
 }
 
 .fc .fc-event {
@@ -61,6 +61,80 @@
   @apply h-12;
 }
 
+/* Dark mode for FullCalendar */
+.dark .fc {
+  --fc-border-color: #374151;
+  --fc-page-bg-color: #1f2937;
+}
+
+.dark .fc-theme-standard td,
+.dark .fc-theme-standard th {
+  @apply border-gray-700;
+}
+
+.dark .fc-theme-standard .fc-scrollgrid {
+  @apply border-gray-700;
+}
+
+/* Calendar Header - Day Names (Sun, Mon, Tue, etc.) */
+.dark .fc .fc-col-header-cell {
+  @apply bg-gray-800;
+}
+
+.dark .fc .fc-col-header-cell-cushion {
+  @apply text-gray-200 font-semibold;
+}
+
+/* Calendar Title (Month/Year) */
+.dark .fc .fc-toolbar-title {
+  @apply text-gray-100;
+}
+
+/* Calendar Buttons (Today, Prev, Next, Month/Week/Day) */
+.dark .fc .fc-button {
+  @apply bg-gray-700 border-gray-600 text-gray-200 hover:bg-gray-600 hover:border-gray-500;
+}
+
+.dark .fc .fc-button-primary:not(:disabled).fc-button-active,
+.dark .fc .fc-button-primary:not(:disabled):active {
+  @apply bg-primary-600 border-primary-600 text-white;
+}
+
+.dark .fc .fc-button:disabled {
+  @apply bg-gray-800 border-gray-700 text-gray-500;
+}
+
+/* Day Grid */
+.dark .fc .fc-daygrid-day-number {
+  @apply text-gray-300;
+}
+
+.dark .fc .fc-daygrid-day.fc-day-today {
+  @apply bg-primary-900/20;
+}
+
+.dark .fc .fc-daygrid-day.fc-day-today .fc-daygrid-day-number {
+  @apply text-primary-400 font-bold;
+}
+
+/* Time Grid */
+.dark .fc .fc-timegrid-slot-label-cushion {
+  @apply text-gray-400;
+}
+
+.dark .fc .fc-timegrid-axis-cushion {
+  @apply text-gray-400;
+}
+
+/* List View */
+.dark .fc .fc-list-empty {
+  @apply bg-gray-800 text-gray-300;
+}
+
+.dark .fc .fc-list-event:hover {
+  @apply bg-gray-700;
+}
+
 /* Custom scrollbar */
 ::-webkit-scrollbar {
   width: 8px;
@@ -68,13 +142,18 @@
 }
 
 ::-webkit-scrollbar-track {
-  @apply bg-gray-100;
+  @apply bg-gray-100 dark:bg-gray-800;
 }
 
 ::-webkit-scrollbar-thumb {
-  @apply bg-gray-400 rounded;
+  @apply bg-gray-400 dark:bg-gray-600 rounded;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  @apply bg-gray-500;
+  @apply bg-gray-500 dark:bg-gray-500;
+}
+
+/* Grayscale filter for emojis */
+.grayscale {
+  filter: grayscale(100%);
 }

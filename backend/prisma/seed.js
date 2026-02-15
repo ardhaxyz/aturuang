@@ -6,55 +6,79 @@ const prisma = new PrismaClient();
 async function main() {
   console.log('🌱 Seeding database...');
 
-  // 1. Create Admin User
-  const adminPassword = await bcrypt.hash('admin123', 10);
-  const admin = await prisma.user.upsert({
-    where: { username: 'admin' },
-    update: {},
-    create: {
-      username: 'admin',
-      passwordHash: adminPassword,
-      role: 'admin',
+  // Check if database already has users
+  const userCount = await prisma.user.count();
+  if (userCount > 0) {
+    console.log('⚠️  Database already contains users. Skipping seed.');
+    console.log('💡 Use the setup endpoint (/api/setup) to create the initial superadmin.');
+    return;
+  }
+
+  // Create sample organization
+  const organization = await prisma.organization.create({
+    data: {
+      name: 'Coordinating Ministry for Food Affairs',
+      description: 'Government organization for food coordination',
+      isActive: true,
     },
   });
-  console.log('✅ Admin user created:', admin.username);
+  console.log('✅ Organization created:', organization.name);
 
-  // 2. Create Rooms
+  // Create sample rooms (public and private)
   const rooms = await Promise.all([
-    prisma.room.upsert({
-      where: { id: 'room-a' },
-      update: {},
-      create: {
-        id: 'room-a',
+    // Public room
+    prisma.room.create({
+      data: {
+        name: 'Ruang Rapat Utama',
+        capacity: 20,
+        facilities: JSON.stringify(['Projector', 'Whiteboard', 'AC', 'Video Conference', 'Sound System']),
+        isPublic: true,
+        isActive: true,
+      },
+    }),
+    // Organization rooms
+    prisma.room.create({
+      data: {
         name: 'Ruang A - Small',
         capacity: 4,
-        facilities: ['Projector', 'Whiteboard', 'AC'],
+        facilities: JSON.stringify(['Projector', 'Whiteboard', 'AC']),
+        isPublic: false,
+        isActive: true,
+        organizationId: organization.id,
       },
     }),
-    prisma.room.upsert({
-      where: { id: 'room-b' },
-      update: {},
-      create: {
-        id: 'room-b',
+    prisma.room.create({
+      data: {
         name: 'Ruang B - Medium',
         capacity: 8,
-        facilities: ['Projector', 'Whiteboard', 'AC', 'Video Conference'],
+        facilities: JSON.stringify(['Projector', 'Whiteboard', 'AC', 'Video Conference']),
+        isPublic: false,
+        isActive: true,
+        organizationId: organization.id,
       },
     }),
-    prisma.room.upsert({
-      where: { id: 'room-c' },
-      update: {},
-      create: {
-        id: 'room-c',
+    prisma.room.create({
+      data: {
         name: 'Ruang C - Large',
         capacity: 15,
-        facilities: ['Projector', 'Whiteboard', 'AC', 'Video Conference', 'Sound System'],
+        facilities: JSON.stringify(['Projector', 'Whiteboard', 'AC', 'Video Conference', 'Sound System']),
+        isPublic: false,
+        isActive: true,
+        organizationId: organization.id,
       },
     }),
   ]);
   console.log('✅ Rooms created:', rooms.length);
 
+  console.log('');
   console.log('🎉 Seeding completed!');
+  console.log('');
+  console.log('📋 Next steps:');
+  console.log('   1. Start the server');
+  console.log('   2. Visit: POST http://localhost:3001/api/setup');
+  console.log('   3. Create your superadmin account');
+  console.log('   4. Login and start managing your organization!');
+  console.log('');
 }
 
 main()

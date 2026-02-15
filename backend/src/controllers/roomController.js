@@ -1,26 +1,91 @@
 const { PrismaClient } = require('@prisma/client');
+const { deleteFile, getFileUrl } = require('../utils/upload');
+
 const prisma = new PrismaClient();
 
 /**
  * Room Controller
- * Menangani operasi terkait ruang rapat
+ * Manages meeting rooms with organization support
  */
 
 /**
- * Get all rooms
+ * Helper: Get accessible room IDs for a user
+ */
+async function getAccessibleRoomIds(user) {
+  if (user.role === 'superadmin') {
+    // Superadmin can see all rooms
+    const rooms = await prisma.room.findMany({
+      where: { isActive: true },
+      select: { id: true },
+    });
+    return rooms.map(r => r.id);
+  }
+
+  if (user.role === 'org_admin' || user.role === 'user') {
+    // Can see public rooms + own org rooms
+    const rooms = await prisma.room.findMany({
+      where: {
+        isActive: true,
+        OR: [
+          { isPublic: true },
+          { organizationId: user.organizationId },
+        ],
+      },
+      select: { id: true },
+    });
+    return rooms.map(r => r.id);
+  }
+
+  return [];
+}
+
+/**
+ * Get all rooms (filtered by user access)
  * GET /api/rooms
  */
 async function getAllRooms(req, res) {
   try {
+    const user = req.user;
+    let where = { isActive: true };
+
+    // Filter by organization access
+    if (user.role !== 'superadmin') {
+      // Fetch fresh organizationId from database (in case token is stale)
+      const freshUser = await prisma.user.findUnique({
+        where: { id: user.userId },
+        select: { organizationId: true },
+      });
+      
+      const organizationId = freshUser?.organizationId || user.organizationId;
+      
+      where.OR = [
+        { isPublic: true },
+        { organizationId: organizationId },
+      ];
+    }
+
     const rooms = await prisma.room.findMany({
-      orderBy: {
-        name: 'asc',
+      where,
+      orderBy: { name: 'asc' },
+      include: {
+        organization: {
+          select: {
+            id: true,
+            name: true,
+          },
+        },
       },
     });
 
+    // Parse facilities JSON string to array
+    const roomsWithParsedFacilities = rooms.map(room => ({
+      ...room,
+      facilities: room.facilities ? JSON.parse(room.facilities) : [],
+    }));
+
     return res.json({
       success: true,
-      data: { rooms },
+      data: { rooms: roomsWithParsedFacilities },
     });
   } catch (error) {
     console.error('Get rooms error:', error);
@@ -38,20 +103,28 @@ async function getAllRooms(req, res) {
 async function getRoomById(req, res) {
   try {
     const { id } = req.params;
+    const user = req.user;
 
     const room = await prisma.room.findUnique({
       where: { id },
       include: {
+        organization: {
+          select: {
+            id: true,
+            name: true,
+          },
+        },
         bookings: {
-          where: {
-            date: {
-              gte: new Date(),
+          orderBy: { date: 'asc' },
+          take: 10,
+          include: {
+            room: {
+              select: {
+                id: true,
+                name: true,
+              },
             },
           },
-          orderBy: {
-            date: 'asc',
-          },
-          take: 10,
         },
       },
     });
@@ -63,9 +136,26 @@ async function getRoomById(req, res) {
       });
     }
 
+    // Check access permissions
+    if (user.role !== 'superadmin') {
+      const hasAccess = room.isPublic || room.organizationId === user.organizationId;
+      if (!hasAccess) {
+        return res.status(403).json({
+          success: false,
+          message: 'Access denied',
+        });
+      }
+    }
+
+    // Parse facilities JSON string to array
+    const roomWithParsedFacilities = {
+      ...room,
+      facilities: room.facilities ? JSON.parse(room.facilities) : [],
+    };
+
     return res.json({
       success: true,
-      data: { room },
+      data: { room: roomWithParsedFacilities },
     });
   } catch (error) {
     console.error('Get room error:', error);
@@ -76,7 +166,353 @@ async function getRoomById(req, res) {
   }
 }
 
+/**
+ * Create new room
+ * POST /api/rooms
+ */
+async function createRoom(req, res) {
+  try {
+    const user = req.user;
+    const { name, capacity, facilities, organizationId, isPublic, imageUrl } = req.body;
+
+    // Validate input
+    if (!name || !capacity) {
+      return res.status(400).json({
+        success: false,
+        message: 'Name and capacity are required',
+      });
+    }
+
+    // Check permissions
+    if (user.role === 'org_admin') {
+      // Org admin can only create rooms for their own organization
+      if (organizationId && organizationId !== user.organizationId) {
+        return res.status(403).json({
+          success: false,
+          message: 'Can only create rooms for your own organization',
+        });
+      }
+    }
+
+    // Validate organization exists (if provided)
+    if (organizationId) {
+      const org = await prisma.organization.findUnique({
+        where: { id: organizationId },
+      });
+
+      if (!org) {
+        return res.status(404).json({
+          success: false,
+          message: 'Organization not found',
+        });
+      }
+    }
+
+    const room = await prisma.room.create({
+      data: {
+        name,
+        capacity: parseInt(capacity),
+        facilities: facilities ? JSON.stringify(facilities) : '[]',
+        imageUrl,
+        isPublic: isPublic || false,
+        organizationId: organizationId || null,
+        isActive: true,
+      },
+      include: {
+        organization: {
+          select: {
+            id: true,
+            name: true,
+          },
+        },
+      },
+    });
+
+    // Parse facilities for response
+    const roomWithParsedFacilities = {
+      ...room,
+      facilities: room.facilities ? JSON.parse(room.facilities) : [],
+    };
+
+    return res.status(201).json({
+      success: true,
+      message: 'Room created successfully',
+      data: { room: roomWithParsedFacilities },
+    });
+  } catch (error) {
+    console.error('Create room error:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'Failed to create room',
+    });
+  }
+}
+
+/**
+ * Update room
+ * PUT /api/rooms/:id
+ */
+async function updateRoom(req, res) {
+  try {
+    const { id } = req.params;
+    const user = req.user;
+    const { name, capacity, facilities, organizationId, isPublic, isActive, imageUrl } = req.body;
+
+    // Check if room exists
+    const existingRoom = await prisma.room.findUnique({
+      where: { id },
+    });
+
+    if (!existingRoom) {
+      return res.status(404).json({
+        success: false,
+        message: 'Room not found',
+      });
+    }
+
+    // Check permissions
+    if (user.role === 'org_admin') {
+      // Can only update own org rooms
+      if (existingRoom.organizationId !== user.organizationId) {
+        return res.status(403).json({
+          success: false,
+          message: 'Can only update rooms in your organization',
+        });
+      }
+      // Cannot change organization
+      if (organizationId && organizationId !== user.organizationId) {
+        return res.status(403).json({
+          success: false,
+          message: 'Cannot change room organization',
+        });
+      }
+    }
+
+    const room = await prisma.room.update({
+      where: { id },
+      data: {
+        name,
+        capacity: capacity ? parseInt(capacity) : undefined,
+        facilities: facilities ? JSON.stringify(facilities) : undefined,
+        imageUrl,
+        isPublic: isPublic !== undefined ? isPublic : undefined,
+        isActive: isActive !== undefined ? isActive : undefined,
+        organizationId: user.role === 'superadmin' ? organizationId : undefined,
+      },
+      include: {
+        organization: {
+          select: {
+            id: true,
+            name: true,
+          },
+        },
+      },
+    });
+
+    // Parse facilities for response
+    const roomWithParsedFacilities = {
+      ...room,
+      facilities: room.facilities ? JSON.parse(room.facilities) : [],
+    };
+
+    return res.json({
+      success: true,
+      message: 'Room updated successfully',
+      data: { room: roomWithParsedFacilities },
+    });
+  } catch (error) {
+    console.error('Update room error:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'Failed to update room',
+    });
+  }
+}
+
+/**
+ * Delete room (soft delete)
+ * DELETE /api/rooms/:id
+ */
+async function deleteRoom(req, res) {
+  try {
+    const { id } = req.params;
+    const user = req.user;
+
+    // Check if room exists
+    const existingRoom = await prisma.room.findUnique({
+      where: { id },
+    });
+
+    if (!existingRoom) {
+      return res.status(404).json({
+        success: false,
+        message: 'Room not found',
+      });
+    }
+
+    // Check permissions
+    if (user.role === 'org_admin') {
+      if (existingRoom.organizationId !== user.organizationId) {
+        return res.status(403).json({
+          success: false,
+          message: 'Can only delete rooms in your organization',
+        });
+      }
+    }
+
+    // Soft delete by deactivating
+    await prisma.room.update({
+      where: { id },
+      data: { isActive: false },
+    });
+
+    return res.json({
+      success: true,
+      message: 'Room deleted successfully',
+    });
+  } catch (error) {
+    console.error('Delete room error:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'Failed to delete room',
+    });
+  }
+}
+
+/**
+ * Upload room image
+ * POST /api/rooms/:id/image
+ */
+async function uploadRoomImage(req, res) {
+  try {
+    const { id } = req.params;
+    const user = req.user;
+
+    if (!req.file) {
+      return res.status(400).json({
+        success: false,
+        message: 'No image file provided',
+      });
+    }
+
+    // Check if room exists
+    const existingRoom = await prisma.room.findUnique({
+      where: { id },
+    });
+
+    if (!existingRoom) {
+      // Delete uploaded file if room doesn't exist
+      await deleteFile(req.file.filename);
+      return res.status(404).json({
+        success: false,
+        message: 'Room not found',
+      });
+    }
+
+    // Check permissions
+    if (user.role === 'org_admin') {
+      if (existingRoom.organizationId !== user.organizationId) {
+        await deleteFile(req.file.filename);
+        return res.status(403).json({
+          success: false,
+          message: 'Can only update rooms in your organization',
+        });
+      }
+    }
+
+    // Delete old image if exists
+    if (existingRoom.imageUrl) {
+      const oldFilename = existingRoom.imageUrl.split('/').pop();
+      await deleteFile(oldFilename);
+    }
+
+    // Update room with new image URL
+    const imageUrl = getFileUrl(req.file.filename);
+    const room = await prisma.room.update({
+      where: { id },
+      data: { imageUrl },
+    });
+
+    return res.json({
+      success: true,
+      message: 'Image uploaded successfully',
+      data: { imageUrl: room.imageUrl },
+    });
+  } catch (error) {
+    console.error('Upload room image error:', error);
+    // Clean up uploaded file on error
+    if (req.file) {
+      await deleteFile(req.file.filename);
+    }
+    return res.status(500).json({
+      success: false,
+      message: 'Failed to upload image',
+    });
+  }
+}
+
+/**
+ * Delete room image
+ * DELETE /api/rooms/:id/image
+ */
+async function deleteRoomImage(req, res) {
+  try {
+    const { id } = req.params;
+    const user = req.user;
+
+    // Check if room exists
+    const existingRoom = await prisma.room.findUnique({
+      where: { id },
+    });
+
+    if (!existingRoom) {
+      return res.status(404).json({
+        success: false,
+        message: 'Room not found',
+      });
+    }
+
+    // Check permissions
+    if (user.role === 'org_admin') {
+      if (existingRoom.organizationId !== user.organizationId) {
+        return res.status(403).json({
+          success: false,
+          message: 'Can only update rooms in your organization',
+        });
+      }
+    }
+
+    // Delete image file if exists
+    if (existingRoom.imageUrl) {
+      const filename = existingRoom.imageUrl.split('/').pop();
+      await deleteFile(filename);
+    }
+
+    // Update room to remove image URL
+    await prisma.room.update({
+      where: { id },
+      data: { imageUrl: null },
+    });
+
+    return res.json({
+      success: true,
+      message: 'Image deleted successfully',
+    });
+  } catch (error) {
+    console.error('Delete room image error:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'Failed to delete image',
+    });
+  }
+}
+
 module.exports = {
   getAllRooms,
   getRoomById,
+  createRoom,
+  updateRoom,
+  deleteRoom,
+  uploadRoomImage,
+  deleteRoomImage,
 };

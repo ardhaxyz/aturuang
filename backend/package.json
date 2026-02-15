@@ -1,7 +1,7 @@
 {
-  "name": "meeting-room-backend",
+  "name": "aturuang-backend",
   "version": "1.0.0",
-  "description": "Backend API untuk Meeting Room Dashboard",
+  "description": "Backend API for Aturuang - Meeting Room Management System",
   "main": "src/index.js",
   "scripts": {
     "start": "node src/index.js",
@@ -17,9 +17,13 @@
     "dotenv": "^16.4.1",
     "express": "^4.18.2",
     "jsonwebtoken": "^9.0.2",
+    "multer": "^2.0.2",
+    "uuid": "^13.0.0",
     "zod": "^3.22.4"
   },
   "devDependencies": {
+    "@types/multer": "^2.0.0",
+    "@types/uuid": "^10.0.0",
     "nodemon": "^3.0.3",
     "prisma": "^5.9.0"
   },

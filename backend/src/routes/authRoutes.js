@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const { login, getMe } = require('../controllers/authController');
+const { login, getMe, changePassword } = require('../controllers/authController');
 const { authenticateToken } = require('../utils/auth');
 
 /**
@@ -8,10 +8,13 @@ const { authenticateToken } = require('../utils/auth');
  * /api/auth
  */
 
-// POST /api/auth - Login with password
-router.post('/auth', login);
+// POST /api/auth/login - Login with username and password
+router.post('/login', login);
 
-// GET /api/me - Get current user info (protected)
+// GET /api/auth/me - Get current user info (protected)
 router.get('/me', authenticateToken, getMe);
+
+// PATCH /api/auth/change-password - Change password (protected)
+router.patch('/change-password', authenticateToken, changePassword);
 
 module.exports = router;

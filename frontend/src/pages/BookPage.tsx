@@ -1,11 +1,13 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Calendar, Clock, Users, Mail, AlertCircle } from 'lucide-react';
+import { Calendar, Clock, Users, Mail, AlertCircle, Globe, Lock } from 'lucide-react';
 import { bookingAPI, roomAPI } from '../utils/api';
 import { Room } from '../types';
+import { useAuth } from '../contexts/AuthContext';
 
 export function BookPage() {
   const navigate = useNavigate();
+  const { user } = useAuth();
   const [rooms, setRooms] = useState<Room[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -115,6 +117,17 @@ export function BookPage() {
 
   const timeOptions = generateTimeOptions();
 
+  // Group rooms by type
+  const publicRooms = rooms.filter(r => r.isPublic);
+  const orgRooms = rooms.filter(r => !r.isPublic && r.organizationId === user?.organizationId);
+
+  const renderRoomOption = (room: Room) => (
+    <option key={room.id} value={room.id}>
+      {room.name} (Capacity: {room.capacity})
+      {room.isPublic ? ' - Public' : ` - ${room.organization?.name || 'Private'}`}
+    </option>
+  );
+
   if (isLoading) {
     return (
       <div className="flex justify-center items-center h-64">
@@ -126,35 +139,35 @@ export function BookPage() {
   return (
     <div className="max-w-4xl mx-auto">
       <div className="mb-8">
-        <h1 className="text-2xl font-bold text-gray-900">Book a Meeting Room</h1>
-        <p className="mt-2 text-gray-600">
+        <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Book a Meeting Room</h1>
+        <p className="mt-2 text-gray-600 dark:text-gray-400">
           Fill out the form below to book a meeting room. Your booking will be pending until approved by an admin.
         </p>
       </div>
 
-      <div className="bg-white shadow rounded-lg">
-        <div className="px-6 py-4 border-b border-gray-200">
-          <h2 className="text-lg font-medium text-gray-900">Booking Form</h2>
+      <div className="bg-white dark:bg-gray-800 shadow rounded-lg">
+        <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
+          <h2 className="text-lg font-medium text-gray-900 dark:text-white">Booking Form</h2>
         </div>
 
         <form onSubmit={handleSubmit} className="px-6 py-6 space-y-6">
           {error && (
-            <div className="rounded-md bg-red-50 p-4">
+            <div className="rounded-md bg-red-50 dark:bg-red-900/20 p-4">
               <div className="flex">
-                <AlertCircle className="h-5 w-5 text-red-400" />
+                <AlertCircle className="h-5 w-5 text-red-400 dark:text-red-300" />
                 <div className="ml-3">
-                  <h3 className="text-sm font-medium text-red-800">{error}</h3>
+                  <h3 className="text-sm font-medium text-red-800 dark:text-red-200">{error}</h3>
                 </div>
               </div>
             </div>
           )}
 
           {success && (
-            <div className="rounded-md bg-green-50 p-4">
+            <div className="rounded-md bg-green-50 dark:bg-green-900/20 p-4">
               <div className="flex">
-                <AlertCircle className="h-5 w-5 text-green-400" />
+                <AlertCircle className="h-5 w-5 text-green-400 dark:text-green-300" />
                 <div className="ml-3">
-                  <h3 className="text-sm font-medium text-green-800">{success}</h3>
+                  <h3 className="text-sm font-medium text-green-800 dark:text-green-200">{success}</h3>
                 </div>
               </div>
             </div>
@@ -162,7 +175,7 @@ export function BookPage() {
 
           {/* Room Selection */}
           <div>
-            <label htmlFor="roomId" className="block text-sm font-medium text-gray-700">
+            <label htmlFor="roomId" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
               <Users className="inline-block h-4 w-4 mr-1" />
               Select Room *
             </label>
@@ -172,21 +185,58 @@ export function BookPage() {
               value={formData.roomId}
               onChange={handleChange}
               required
-              className="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-primary-500 focus:border-primary-500 sm:text-sm rounded-md"
+              className="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:outline-none focus:ring-primary-500 focus:border-primary-500 sm:text-sm rounded-md"
             >
               <option value="">Select a room</option>
-              {rooms.map((room) => (
-                <option key={room.id} value={room.id}>
-                  {room.name} (Capacity: {room.capacity}) - {room.facilities.join(', ')}
-                </option>
-              ))}
+              
+              {publicRooms.length > 0 && (
+                <optgroup label="Public Rooms">
+                  {publicRooms.map(renderRoomOption)}
+                </optgroup>
+              )}
+              
+              {orgRooms.length > 0 && (
+                <optgroup label={`${user?.organization?.name || 'Your Organization'}`}>
+                  {orgRooms.map(renderRoomOption)}
+                </optgroup>
+              )}
             </select>
+            
+            {/* Room info */}
+            {formData.roomId && (
+              <div className="mt-2 p-3 bg-gray-50 dark:bg-gray-700/50 rounded-md">
+                {(() => {
+                  const room = rooms.find(r => r.id === formData.roomId);
+                  if (!room) return null;
+                  return (
+                    <div className="text-sm">
+                      <div className="flex items-center mb-1">
+                        {room.isPublic ? (
+                          <><Globe size={14} className="mr-1 text-green-600 dark:text-green-400" /> <span className="text-green-700 dark:text-green-300">Public Room</span></>
+                        ) : (
+                          <><Lock size={14} className="mr-1 text-blue-600 dark:text-blue-400" /> 
+                            <span className="text-blue-700 dark:text-blue-300">
+                              {room.organization?.name || 'Private Room'}
+                            </span>
+                          </>
+                        )}
+                      </div>
+                      {room.facilities && room.facilities.length > 0 && (
+                        <div className="text-gray-600 dark:text-gray-400">
+                          Facilities: {room.facilities.join(', ')}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })()}
+              </div>
+            )}
           </div>
 
           {/* Date and Time */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             <div>
-              <label htmlFor="date" className="block text-sm font-medium text-gray-700">
+              <label htmlFor="date" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
                 <Calendar className="inline-block h-4 w-4 mr-1" />
                 Date *
               </label>
@@ -198,12 +248,12 @@ export function BookPage() {
                 onChange={handleChange}
                 required
                 min={new Date().toISOString().split('T')[0]}
-                className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-primary-500 focus:border-primary-500 sm:text-sm"
+                className="mt-1 block w-full border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-primary-500 focus:border-primary-500 sm:text-sm"
               />
             </div>
 
             <div>
-              <label htmlFor="startTime" className="block text-sm font-medium text-gray-700">
+              <label htmlFor="startTime" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
                 <Clock className="inline-block h-4 w-4 mr-1" />
                 Start Time *
               </label>
@@ -213,7 +263,7 @@ export function BookPage() {
                 value={formData.startTime}
                 onChange={handleChange}
                 required
-                className="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-primary-500 focus:border-primary-500 sm:text-sm rounded-md"
+                className="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:outline-none focus:ring-primary-500 focus:border-primary-500 sm:text-sm rounded-md"
               >
                 {timeOptions.map((time) => (
                   <option key={time} value={time}>
@@ -224,7 +274,7 @@ export function BookPage() {
             </div>
 
             <div>
-              <label htmlFor="endTime" className="block text-sm font-medium text-gray-700">
+              <label htmlFor="endTime" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
                 <Clock className="inline-block h-4 w-4 mr-1" />
                 End Time *
               </label>
@@ -234,7 +284,7 @@ export function BookPage() {
                 value={formData.endTime}
                 onChange={handleChange}
                 required
-                className="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-primary-500 focus:border-primary-500 sm:text-sm rounded-md"
+                className="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:outline-none focus:ring-primary-500 focus:border-primary-500 sm:text-sm rounded-md"
               >
                 {timeOptions.map((time) => (
                   <option key={time} value={time}>
@@ -247,7 +297,7 @@ export function BookPage() {
 
           {/* Meeting Title */}
           <div>
-            <label htmlFor="title" className="block text-sm font-medium text-gray-700">
+            <label htmlFor="title" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
               Meeting Title *
             </label>
             <input
@@ -258,14 +308,14 @@ export function BookPage() {
               onChange={handleChange}
               required
               placeholder="e.g., Team Meeting, Client Presentation"
-              className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-primary-500 focus:border-primary-500 sm:text-sm"
+              className="mt-1 block w-full border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-primary-500 focus:border-primary-500 sm:text-sm"
             />
           </div>
 
           {/* Booker Information */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
-              <label htmlFor="bookerName" className="block text-sm font-medium text-gray-700">
+              <label htmlFor="bookerName" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
                 Your Name *
               </label>
               <input
@@ -276,12 +326,12 @@ export function BookPage() {
                 onChange={handleChange}
                 required
                 placeholder="John Doe"
-                className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-primary-500 focus:border-primary-500 sm:text-sm"
+                className="mt-1 block w-full border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-primary-500 focus:border-primary-500 sm:text-sm"
               />
             </div>
 
             <div>
-              <label htmlFor="bookerEmail" className="block text-sm font-medium text-gray-700">
+              <label htmlFor="bookerEmail" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
                 <Mail className="inline-block h-4 w-4 mr-1" />
                 Email Address (Optional)
               </label>
@@ -292,17 +342,17 @@ export function BookPage() {
                 value={formData.bookerEmail}
                 onChange={handleChange}
                 placeholder="john@example.com"
-                className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-primary-500 focus:border-primary-500 sm:text-sm"
+                className="mt-1 block w-full border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-primary-500 focus:border-primary-500 sm:text-sm"
               />
             </div>
           </div>
 
           {/* Form Actions */}
-          <div className="flex justify-end space-x-4 pt-6 border-t border-gray-200">
+          <div className="flex justify-end space-x-4 pt-6 border-t border-gray-200 dark:border-gray-700">
             <button
               type="button"
               onClick={() => navigate('/')}
-              className="px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500"
+              className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500"
             >
               Cancel
             </button>
@@ -318,15 +368,15 @@ export function BookPage() {
       </div>
 
       {/* Booking Guidelines */}
-      <div className="mt-8 bg-blue-50 rounded-lg p-6">
-        <h3 className="text-lg font-medium text-blue-900 mb-4">Booking Guidelines</h3>
-        <ul className="space-y-2 text-sm text-blue-800">
-          <li>• Bookings are subject to approval by an administrator</li>
-          <li>• You will receive email notification when your booking is approved (if email provided)</li>
-          <li>• Maximum booking duration is 4 hours</li>
-          <li>• Bookings can be made up to 30 days in advance</li>
+      <div className="mt-8 bg-blue-50 dark:bg-blue-900/20 rounded-lg p-6">
+        <h3 className="text-lg font-medium text-blue-900 dark:text-blue-100 mb-4">Booking Guidelines</h3>
+        <ul className="space-y-2 text-sm text-blue-800 dark:text-blue-200">
+          <li>• Public rooms are available to all users</li>
+          <li>• Organization rooms are only available to organization members</li>
+          <li>• Bookings are subject to approval by your organization admin</li>
+          <li>• You can view your booking status in the Dashboard or Calendar</li>
           <li>• Please cancel bookings you no longer need</li>
-          <li>• Contact administrator for recurring bookings</li>
+          <li>• Contact your organization admin for any issues</li>
         </ul>
       </div>
     </div>

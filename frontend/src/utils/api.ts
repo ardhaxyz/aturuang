@@ -1,5 +1,5 @@
 import axios from 'axios';
-import { ApiResponse, Booking, Room, User } from '../types';
+import { ApiResponse, Booking, Room, User, Organization } from '../types';
 
 // API base URL
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
@@ -37,13 +37,50 @@ api.interceptors.response.use(
 
 // API functions
 export const authAPI = {
-  login: async (password: string) => {
-    const response = await api.post<ApiResponse<{ token: string; user: User }>>('/api/auth', { password });
+  login: async (username: string, password: string) => {
+    const response = await api.post<ApiResponse<{ token: string; user: User }>>('/api/auth/login', { username, password });
     return response.data;
   },
 
   getMe: async () => {
-    const response = await api.get<ApiResponse<{ user: User }>>('/api/me');
+    const response = await api.get<ApiResponse<{ user: User }>>('/api/auth/me');
+    return response.data;
+  },
+
+  changePassword: async (currentPassword: string, newPassword: string) => {
+    const response = await api.patch<ApiResponse<null>>('/api/auth/change-password', { currentPassword, newPassword });
+    return response.data;
+  },
+};
+
+export const organizationAPI = {
+  getAll: async () => {
+    const response = await api.get<ApiResponse<{ organizations: Organization[] }>>('/api/organizations');
+    return response.data;
+  },
+
+  getById: async (id: string) => {
+    const response = await api.get<ApiResponse<{ organization: Organization }>>(`/api/organizations/${id}`);
+    return response.data;
+  },
+
+  create: async (data: { name: string; description?: string; logoUrl?: string }) => {
+    const response = await api.post<ApiResponse<{ organization: Organization }>>('/api/organizations', data);
+    return response.data;
+  },
+
+  update: async (id: string, data: { name?: string; description?: string; logoUrl?: string; isActive?: boolean }) => {
+    const response = await api.put<ApiResponse<{ organization: Organization }>>(`/api/organizations/${id}`, data);
+    return response.data;
+  },
+
+  delete: async (id: string) => {
+    const response = await api.delete<ApiResponse<null>>(`/api/organizations/${id}`);
+    return response.data;
+  },
+
+  getStats: async (id: string) => {
+    const response = await api.get<ApiResponse<{ totalRooms: number; totalUsers: number; totalBookings: number; pendingApprovals: number }>>(`/api/organizations/${id}/stats`);
     return response.data;
   },
 };
@@ -56,6 +93,97 @@ export const roomAPI = {
 
   getById: async (id: string) => {
     const response = await api.get<ApiResponse<{ room: Room }>>(`/api/rooms/${id}`);
+    return response.data;
+  },
+
+  create: async (data: {
+    name: string;
+    capacity: number;
+    facilities?: string[];
+    isPublic?: boolean;
+    organizationId?: string;
+    imageUrl?: string;
+  }) => {
+    const response = await api.post<ApiResponse<{ room: Room }>>('/api/rooms', data);
+    return response.data;
+  },
+
+  update: async (id: string, data: {
+    name?: string;
+    capacity?: number;
+    facilities?: string[];
+    isPublic?: boolean;
+    isActive?: boolean;
+    organizationId?: string;
+    imageUrl?: string;
+  }) => {
+    const response = await api.put<ApiResponse<{ room: Room }>>(`/api/rooms/${id}`, data);
+    return response.data;
+  },
+
+  delete: async (id: string) => {
+    const response = await api.delete<ApiResponse<null>>(`/api/rooms/${id}`);
+    return response.data;
+  },
+
+  uploadImage: async (id: string, file: File) => {
+    const formData = new FormData();
+    formData.append('image', file);
+    
+    const response = await api.post<ApiResponse<{ imageUrl: string }>>(`/api/rooms/${id}/image`, formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
+    return response.data;
+  },
+
+  deleteImage: async (id: string) => {
+    const response = await api.delete<ApiResponse<null>>(`/api/rooms/${id}/image`);
+    return response.data;
+  },
+};
+
+export const userAPI = {
+  getAll: async () => {
+    const response = await api.get<ApiResponse<{ users: User[] }>>('/api/users');
+    return response.data;
+  },
+
+  getById: async (id: string) => {
+    const response = await api.get<ApiResponse<{ user: User }>>(`/api/users/${id}`);
+    return response.data;
+  },
+
+  create: async (data: {
+    username: string;
+    password: string;
+    email?: string;
+    role: string;
+    organizationId?: string;
+  }) => {
+    const response = await api.post<ApiResponse<{ user: User }>>('/api/users', data);
+    return response.data;
+  },
+
+  update: async (id: string, data: {
+    username?: string;
+    email?: string;
+    role?: string;
+    isActive?: boolean;
+    organizationId?: string;
+  }) => {
+    const response = await api.put<ApiResponse<{ user: User }>>(`/api/users/${id}`, data);
+    return response.data;
+  },
+
+  delete: async (id: string) => {
+    const response = await api.delete<ApiResponse<null>>(`/api/users/${id}`);
+    return response.data;
+  },
+
+  resetPassword: async (id: string, newPassword: string) => {
+    const response = await api.post<ApiResponse<null>>(`/api/users/${id}/reset-password`, { newPassword });
     return response.data;
   },
 };

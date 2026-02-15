@@ -1,35 +1,63 @@
-// Prisma Schema untuk Meeting Room Dashboard
-// Database: PostgreSQL
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
 
 generator client {
   provider = "prisma-client-js"
 }
 
 datasource db {
-  provider = "postgresql"
+  provider = "sqlite"
   url      = env("DATABASE_URL")
 }
 
-// Model untuk Room (Ruang Rapat)
-model Room {
-  id         String   @id @default(cuid())
-  name       String
-  capacity   Int
-  facilities String[]
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
+// Organization model - Multi-tenant structure
+model Organization {
+  id          String   @id @default(cuid())
+  name        String
+  description String?
+  logoUrl     String?  // Optional org logo path
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 
-  // Relasi ke Booking
-  bookings   Booking[]
+  // Relations
+  users  User[]
+  rooms  Room[]
+  
+  @@index([isActive])
 }
 
-// Model untuk Booking (Reservasi)
+// Room model with organization support
+model Room {
+  id             String    @id @default(cuid())
+  name           String
+  capacity       Int
+  facilities     String    @default("") // JSON string for SQLite
+  imageUrl       String?   // Room image path
+  isPublic       Boolean   @default(false) // Public rooms accessible by all
+  isActive       Boolean   @default(true)
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  // Organization relation (nullable for public rooms)
+  organizationId String?
+  organization   Organization? @relation(fields: [organizationId], references: [id], onDelete: SetNull)
+
+  // Relations
+  bookings Booking[]
+
+  @@index([organizationId])
+  @@index([isPublic])
+  @@index([isActive])
+}
+
+// Booking model - unchanged structure
 model Booking {
   id          String    @id @default(cuid())
   roomId      String
-  date        DateTime
-  startTime   DateTime
-  endTime     DateTime
+  date        String    // Date in YYYY-MM-DD format
+  startTime   String    // Time in HH:MM format
+  endTime     String    // Time in HH:MM format
   title       String
   bookerName  String
   bookerEmail String?
@@ -37,21 +65,31 @@ model Booking {
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
 
-  // Relasi ke Room
-  room        Room      @relation(fields: [roomId], references: [id], onDelete: Cascade)
+  // Relations
+  room Room @relation(fields: [roomId], references: [id], onDelete: Cascade)
 
-  // Index untuk query performa
+  // Index for query performance
   @@index([roomId])
   @@index([date])
   @@index([status])
 }
 
-// Model untuk User (Admin Only)
+// User model with role-based access and organization
 model User {
-  id           String   @id @default(cuid())
-  username     String   @unique
-  passwordHash String
-  role         String   @default("admin") // admin, guest
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  id             String   @id @default(cuid())
+  username       String   @unique
+  email          String?  @unique
+  passwordHash   String
+  role           String   // superadmin, org_admin, user
+  isActive       Boolean  @default(true)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  // Organization relation (nullable for superadmin)
+  organizationId String?
+  organization   Organization? @relation(fields: [organizationId], references: [id], onDelete: SetNull)
+
+  @@index([organizationId])
+  @@index([role])
+  @@index([isActive])
 }

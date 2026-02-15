@@ -1,46 +1,74 @@
+const { PrismaClient } = require('@prisma/client');
 const bcrypt = require('bcryptjs');
+const { generateToken } = require('../utils/auth');
+
+const prisma = new PrismaClient();
 
 /**
  * Authentication Controller
- * Menangani login dan verifikasi password
+ * Database-based authentication with multi-role support
  */
 
 /**
- * Login dengan single password system
- * POST /api/auth
+ * Login with username and password
+ * POST /api/auth/login
  */
 async function login(req, res) {
   try {
-    const { password } = req.body;
+    const { username, password } = req.body;
 
-    // Validasi input
-    if (!password) {
+    // Validate input
+    if (!username || !password) {
       return res.status(400).json({
         success: false,
-        message: 'Password is required',
+        message: 'Username and password are required',
       });
     }
 
-    // Check admin password
-    const adminPassword = process.env.ADMIN_PASSWORD || 'admin123';
-    const isAdmin = password === adminPassword;
+    // Find user by username
+    const user = await prisma.user.findUnique({
+      where: { username },
+      include: {
+        organization: {
+          select: {
+            id: true,
+            name: true,
+          },
+        },
+      },
+    });
 
-    // Check guest password
-    const guestPassword = process.env.GUEST_PASSWORD || 'guest123';
-    const isGuest = password === guestPassword;
-
-    if (!isAdmin && !isGuest) {
+    // Check if user exists
+    if (!user) {
       return res.status(401).json({
         success: false,
-        message: 'Invalid password',
+        message: 'Invalid username or password',
+      });
+    }
+
+    // Check if user is active
+    if (!user.isActive) {
+      return res.status(401).json({
+        success: false,
+        message: 'Account is deactivated. Contact administrator.',
+      });
+    }
+
+    // Verify password
+    const isPasswordValid = await bcrypt.compare(password, user.passwordHash);
+    if (!isPasswordValid) {
+      return res.status(401).json({
+        success: false,
+        message: 'Invalid username or password',
       });
     }
 
     // Generate JWT token
-    const { generateToken } = require('../utils/auth');
     const token = generateToken({
-      role: isAdmin ? 'admin' : 'guest',
-      timestamp: Date.now(),
+      userId: user.id,
+      username: user.username,
+      role: user.role,
+      organizationId: user.organizationId,
     });
 
     return res.json({
@@ -49,8 +77,10 @@ async function login(req, res) {
       data: {
         token,
         user: {
-          role: isAdmin ? 'admin' : 'guest',
-          username: isAdmin ? 'admin' : 'guest',
+          id: user.id,
+          username: user.username,
+          role: user.role,
+          organization: user.organization,
         },
       },
     });
@@ -65,16 +95,39 @@ async function login(req, res) {
 
 /**
  * Get current user info
- * GET /api/me
+ * GET /api/auth/me
  */
 async function getMe(req, res) {
   try {
+    const user = await prisma.user.findUnique({
+      where: { id: req.user.userId },
+      include: {
+        organization: {
+          select: {
+            id: true,
+            name: true,
+          },
+        },
+      },
+    });
+
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: 'User not found',
+      });
+    }
+
     return res.json({
       success: true,
       data: {
         user: {
-          role: req.user.role,
-          username: req.user.username,
+          id: user.id,
+          username: user.username,
+          email: user.email,
+          role: user.role,
+          isActive: user.isActive,
+          organization: user.organization,
         },
       },
     });
@@ -87,7 +140,75 @@ async function getMe(req, res) {
   }
 }
 
+/**
+ * Change password
+ * PATCH /api/auth/change-password
+ */
+async function changePassword(req, res) {
+  try {
+    const { currentPassword, newPassword } = req.body;
+    const userId = req.user.userId;
+
+    // Validate input
+    if (!currentPassword || !newPassword) {
+      return res.status(400).json({
+        success: false,
+        message: 'Current password and new password are required',
+      });
+    }
+
+    if (newPassword.length < 6) {
+      return res.status(400).json({
+        success: false,
+        message: 'New password must be at least 6 characters',
+      });
+    }
+
+    // Get user
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+    });
+
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: 'User not found',
+      });
+    }
+
+    // Verify current password
+    const isPasswordValid = await bcrypt.compare(currentPassword, user.passwordHash);
+    if (!isPasswordValid) {
+      return res.status(401).json({
+        success: false,
+        message: 'Current password is incorrect',
+      });
+    }
+
+    // Hash new password
+    const newPasswordHash = await bcrypt.hash(newPassword, 10);
+
+    // Update password
+    await prisma.user.update({
+      where: { id: userId },
+      data: { passwordHash: newPasswordHash },
+    });
+
+    return res.json({
+      success: true,
+      message: 'Password changed successfully',
+    });
+  } catch (error) {
+    console.error('Change password error:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'Internal server error',
+    });
+  }
+}
+
 module.exports = {
   login,
   getMe,
+  changePassword,
 };

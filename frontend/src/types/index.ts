@@ -1,12 +1,32 @@
-// Types untuk Meeting Room Dashboard
+// Types untuk Aturuang - Meeting Room Management System
+
+export interface Organization {
+  id: string;
+  name: string;
+  description?: string;
+  logoUrl?: string;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+  _count?: {
+    users: number;
+    rooms: number;
+  };
+}
 
 export interface Room {
   id: string;
   name: string;
   capacity: number;
   facilities: string[];
+  imageUrl?: string;
+  isPublic: boolean;
+  isActive: boolean;
+  organizationId?: string;
+  organization?: Organization;
   createdAt: string;
   updatedAt: string;
+  bookings?: Booking[];
 }
 
 export interface Booking {
@@ -25,17 +45,15 @@ export interface Booking {
 }
 
 export interface User {
-  role: 'admin' | 'guest';
+  id: string;
   username: string;
-}
-
-export interface LoginResponse {
-  success: boolean;
-  message: string;
-  data: {
-    token: string;
-    user: User;
-  };
+  email?: string;
+  role: 'superadmin' | 'org_admin' | 'user';
+  isActive: boolean;
+  organizationId?: string;
+  organization?: Organization;
+  createdAt: string;
+  updatedAt: string;
 }
 
 export interface ApiResponse<T> {
@@ -58,4 +76,27 @@ export interface BookingFormData {
   title: string;
   bookerName: string;
   bookerEmail?: string;
+}
+
+export interface RoomFormData {
+  name: string;
+  capacity: number;
+  facilities: string[];
+  isPublic: boolean;
+  organizationId?: string;
+  image?: File;
+}
+
+export interface UserFormData {
+  username: string;
+  password: string;
+  email?: string;
+  role: 'superadmin' | 'org_admin' | 'user';
+  organizationId?: string;
+}
+
+export interface OrganizationFormData {
+  name: string;
+  description?: string;
+  logoUrl?: string;
 }

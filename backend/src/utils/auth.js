@@ -54,11 +54,78 @@ function authenticateToken(req, res, next) {
 }
 
 /**
- * Admin Middleware
- * Checks if user has admin role
+ * Role-based access control middleware
+ * Checks if user has one of the allowed roles
+ * @param {...string} allowedRoles - Allowed roles
+ */
+function requireRole(...allowedRoles) {
+  return (req, res, next) => {
+    if (!req.user || !allowedRoles.includes(req.user.role)) {
+      return res.status(403).json({
+        success: false,
+        message: 'Insufficient permissions',
+      });
+    }
+    next();
+  };
+}
+
+/**
+ * Superadmin middleware
+ */
+function requireSuperadmin(req, res, next) {
+  if (req.user.role !== 'superadmin') {
+    return res.status(403).json({
+      success: false,
+      message: 'Superadmin access required',
+    });
+  }
+  next();
+}
+
+/**
+ * Admin middleware (superadmin or org_admin)
  */
 function requireAdmin(req, res, next) {
-  if (req.user.role !== 'admin') {
+  if (!['superadmin', 'org_admin'].includes(req.user.role)) {
+    return res.status(403).json({
+      success: false,
+      message: 'Admin access required',
+    });
+  }
+  next();
+}
+
+/**
+ * Organization access middleware
+ * Checks if user can access resources for a specific organization
+ */
+function requireOrgAccess(req, res, next) {
+  const { organizationId } = req.params;
+  const user = req.user;
+
+  // Superadmin can access all organizations
+  if (user.role === 'superadmin') {
+    return next();
+  }
+
+  // User must belong to the organization
+  if (user.organizationId !== organizationId) {
+    return res.status(403).json({
+      success: false,
+      message: 'Access denied for this organization',
+    });
+  }
+
+  next();
+}
+
+/**
+ * Legacy requireAdmin (kept for backward compatibility)
+ * @deprecated Use requireRole or requireAdmin instead
+ */
+function requireAdminLegacy(req, res, next) {
+  if (!['superadmin', 'org_admin', 'admin'].includes(req.user.role)) {
     return res.status(403).json({
       success: false,
       message: 'Admin access required',
@@ -71,5 +138,9 @@ module.exports = {
   generateToken,
   verifyToken,
   authenticateToken,
+  requireRole,
+  requireSuperadmin,
   requireAdmin,
+  requireOrgAccess,
+  requireAdminLegacy,
 };

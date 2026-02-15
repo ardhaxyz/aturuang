@@ -1,10 +1,11 @@
 const { PrismaClient } = require('@prisma/client');
-const prisma = new PrismaClient();
 const { checkConflict } = require('../utils/validation');
+
+const prisma = new PrismaClient();
 
 /**
  * Booking Controller
- * Menangani operasi terkait booking ruang rapat
+ * Handles booking operations with organization-based access control
  */
 
 /**
@@ -13,6 +14,7 @@ const { checkConflict } = require('../utils/validation');
  */
 async function getAllBookings(req, res) {
   try {
+    const user = req.user;
     const { roomId, status, startDate, endDate, limit = 100 } = req.query;
 
     const where = {};
@@ -31,11 +33,29 @@ async function getAllBookings(req, res) {
     if (startDate || endDate) {
       where.date = {};
       if (startDate) {
-        where.date.gte = new Date(startDate);
+        where.date.gte = startDate;
       }
       if (endDate) {
-        where.date.lte = new Date(endDate);
+        where.date.lte = endDate;
       }
+    }
+
+    // Apply organization-based access control
+    if (user.role !== 'superadmin') {
+      // Fetch fresh organizationId from database (in case token is stale)
+      const freshUser = await prisma.user.findUnique({
+        where: { id: user.userId },
+        select: { organizationId: true },
+      });
+      
+      const organizationId = freshUser?.organizationId || user.organizationId;
+      
+      where.room = {
+        OR: [
+          { isPublic: true },
+          { organizationId: organizationId },
+        ],
+      };
     }
 
     const bookings = await prisma.booking.findMany({
@@ -47,6 +67,8 @@ async function getAllBookings(req, res) {
             name: true,
             capacity: true,
             facilities: true,
+            organizationId: true,
+            isPublic: true,
           },
         },
       },
@@ -57,9 +79,18 @@ async function getAllBookings(req, res) {
       take: parseInt(limit),
     });
 
+    // Parse facilities JSON string to array for each booking
+    const bookingsWithParsedFacilities = bookings.map(booking => ({
+      ...booking,
+      room: booking.room ? {
+        ...booking.room,
+        facilities: booking.room.facilities ? JSON.parse(booking.room.facilities) : [],
+      } : null,
+    }));
+
     return res.json({
       success: true,
-      data: { bookings },
+      data: { bookings: bookingsWithParsedFacilities },
     });
   } catch (error) {
     console.error('Get bookings error:', error);
@@ -77,6 +108,7 @@ async function getAllBookings(req, res) {
 async function getBookingById(req, res) {
   try {
     const { id } = req.params;
+    const user = req.user;
 
     const booking = await prisma.booking.findUnique({
       where: { id },
@@ -92,9 +124,33 @@ async function getBookingById(req, res) {
       });
     }
 
+    // Check access permissions
+    if (user.role !== 'superadmin') {
+      const room = await prisma.room.findUnique({
+        where: { id: booking.roomId },
+      });
+      
+      const hasAccess = room.isPublic || room.organizationId === user.organizationId;
+      if (!hasAccess) {
+        return res.status(403).json({
+          success: false,
+          message: 'Access denied',
+        });
+      }
+    }
+
+    // Parse facilities JSON string to array
+    const bookingWithParsedFacilities = {
+      ...booking,
+      room: booking.room ? {
+        ...booking.room,
+        facilities: booking.room.facilities ? JSON.parse(booking.room.facilities) : [],
+      } : null,
+    };
+
     return res.json({
       success: true,
-      data: { booking },
+      data: { booking: bookingWithParsedFacilities },
     });
   } catch (error) {
     console.error('Get booking error:', error);
@@ -111,29 +167,18 @@ async function getBookingById(req, res) {
  */
 async function createBooking(req, res) {
   try {
+    const user = req.user;
     const { roomId, date, startTime, endTime, title, bookerName, bookerEmail } = req.body;
 
-    // Parse date
-    const bookingDate = new Date(date);
-
-    // Combine date and time
-    const startDateTime = new Date(bookingDate);
-    const [startHour, startMin] = startTime.split(':');
-    startDateTime.setHours(parseInt(startHour), parseInt(startMin), 0, 0);
-
-    const endDateTime = new Date(bookingDate);
-    const [endHour, endMin] = endTime.split(':');
-    endDateTime.setHours(parseInt(endHour), parseInt(endMin), 0, 0);
-
-    // Validate time range
-    if (startDateTime >= endDateTime) {
+    // Validate time range (compare as time strings)
+    if (startTime >= endTime) {
       return res.status(400).json({
         success: false,
         message: 'End time must be after start time',
       });
     }
 
-    // Check if room exists
+    // Check if room exists and user has access
     const room = await prisma.room.findUnique({
       where: { id: roomId },
     });
@@ -143,6 +188,25 @@ async function createBooking(req, res) {
         success: false,
         message: 'Room not found',
       });
+    }
+
+    // Check access permissions
+    if (user.role !== 'superadmin') {
+      // Fetch fresh organizationId from database (in case token is stale)
+      const freshUser = await prisma.user.findUnique({
+        where: { id: user.userId },
+        select: { organizationId: true },
+      });
+      
+      const organizationId = freshUser?.organizationId || user.organizationId;
+      const hasAccess = room.isPublic || room.organizationId === organizationId;
+      
+      if (!hasAccess) {
+        return res.status(403).json({
+          success: false,
+          message: 'You do not have access to book this room',
+        });
+      }
     }
 
     // Get existing bookings for conflict detection
@@ -164,11 +228,11 @@ async function createBooking(req, res) {
       });
     }
 
-    // Create booking
+    // Create booking (date is stored as string in YYYY-MM-DD format)
     const booking = await prisma.booking.create({
       data: {
         roomId,
-        date: startDateTime,
+        date,
         startTime,
         endTime,
         title,
@@ -181,10 +245,19 @@ async function createBooking(req, res) {
       },
     });
 
+    // Parse facilities JSON string to array
+    const bookingWithParsedFacilities = {
+      ...booking,
+      room: booking.room ? {
+        ...booking.room,
+        facilities: booking.room.facilities ? JSON.parse(booking.room.facilities) : [],
+      } : null,
+    };
+
     return res.status(201).json({
       success: true,
       message: 'Booking created successfully',
-      data: { booking },
+      data: { booking: bookingWithParsedFacilities },
     });
   } catch (error) {
     console.error('Create booking error:', error);
@@ -202,11 +275,15 @@ async function createBooking(req, res) {
 async function approveBooking(req, res) {
   try {
     const { id } = req.params;
+    const user = req.user;
     const { action } = req.body; // 'approve' or 'reject'
 
     // Validate booking exists
     const existingBooking = await prisma.booking.findUnique({
       where: { id },
+      include: {
+        room: true,
+      },
     });
 
     if (!existingBooking) {
@@ -214,6 +291,25 @@ async function approveBooking(req, res) {
         success: false,
         message: 'Booking not found',
       });
+    }
+
+    // Check approval permissions
+    if (user.role !== 'superadmin') {
+      // Org admin can only approve bookings for their org rooms
+      if (user.role === 'org_admin') {
+        if (existingBooking.room.organizationId !== user.organizationId) {
+          return res.status(403).json({
+            success: false,
+            message: 'Can only approve bookings for your organization\'s rooms',
+          });
+        }
+      } else {
+        // Regular users cannot approve
+        return res.status(403).json({
+          success: false,
+          message: 'Admin access required',
+        });
+      }
     }
 
     // Update booking status
@@ -227,10 +323,19 @@ async function approveBooking(req, res) {
       },
     });
 
+    // Parse facilities JSON string to array
+    const bookingWithParsedFacilities = {
+      ...booking,
+      room: booking.room ? {
+        ...booking.room,
+        facilities: booking.room.facilities ? JSON.parse(booking.room.facilities) : [],
+      } : null,
+    };
+
     return res.json({
       success: true,
       message: `Booking ${action === 'approve' ? 'approved' : 'rejected'} successfully`,
-      data: { booking },
+      data: { booking: bookingWithParsedFacilities },
     });
   } catch (error) {
     console.error('Approve booking error:', error);
@@ -248,10 +353,14 @@ async function approveBooking(req, res) {
 async function deleteBooking(req, res) {
   try {
     const { id } = req.params;
+    const user = req.user;
 
     // Validate booking exists
     const existingBooking = await prisma.booking.findUnique({
       where: { id },
+      include: {
+        room: true,
+      },
     });
 
     if (!existingBooking) {
@@ -259,6 +368,23 @@ async function deleteBooking(req, res) {
         success: false,
         message: 'Booking not found',
       });
+    }
+
+    // Check delete permissions
+    if (user.role !== 'superadmin') {
+      if (user.role === 'org_admin') {
+        if (existingBooking.room.organizationId !== user.organizationId) {
+          return res.status(403).json({
+            success: false,
+            message: 'Can only delete bookings for your organization\'s rooms',
+          });
+        }
+      } else {
+        return res.status(403).json({
+          success: false,
+          message: 'Admin access required',
+        });
+      }
     }
 
     // Delete booking
