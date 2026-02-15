@@ -137,7 +137,7 @@ export function BookPage() {
   }
 
   return (
-    <div className="max-w-4xl mx-auto">
+    <div className="space-y-6">
       <div className="mb-8">
         <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Book a Meeting Room</h1>
         <p className="mt-2 text-gray-600 dark:text-gray-400">
