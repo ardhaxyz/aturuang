@@ -1,0 +1,21 @@
+services:
+  - type: web
+    name: aturuang-backend
+    runtime: node
+    plan: free
+    branch: master
+    buildCommand: cd backend && npm install && npx prisma generate
+    startCommand: cd backend && npx prisma migrate deploy && npm start
+    envVars:
+      - key: DATABASE_URL
+        value: file:./prisma/dev.db
+      - key: JWT_SECRET
+        generateValue: true
+      - key: FRONTEND_URL
+        value: https://aturuang.vercel.app
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 10000
+    healthCheckPath: /health
+    autoDeploy: true
