@@ -26,7 +26,7 @@ interface LayoutProps {
 
 export function Layout({ children }: LayoutProps) {
   const location = useLocation();
-  const { user, logout, isSuperadmin, isAdmin } = useAuth();
+  const { logout, isSuperadmin, isAdmin } = useAuth();
   const { theme, toggleTheme } = useTheme();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
