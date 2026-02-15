@@ -4,7 +4,7 @@
 
 ![License](https://img.shields.io/badge/license-MIT-blue.svg)
 ![Docker](https://img.shields.io/badge/docker-ready-brightgreen.svg)
-![Version](https://img.shields.io/badge/version-2.0.0-blue.svg)
+![Version](https://img.shields.io/badge/version-0.3.0-blue.svg)
 
 ## 🌟 Features
 
@@ -323,7 +323,7 @@ docker compose up -d --build
 
 ## 📝 Changelog
 
-### Version 2.0.0
+### Version 0.3.0
 - ✅ Multi-tenant organization system
 - ✅ Role-based access (superadmin, org_admin, user)
 - ✅ Room image uploads
