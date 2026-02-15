@@ -37,13 +37,19 @@ app.use((req, res, next) => {
 
 // Setup route (no authentication required, only works when no users exist)
 app.use('/api/setup', setupRoutes);
+console.log('✅ Setup routes mounted');
 
 // API Routes
 app.use('/api/auth', authRoutes);
+console.log('✅ Auth routes mounted');
 app.use('/api/organizations', organizationRoutes);
+console.log('✅ Organization routes mounted');
 app.use('/api/rooms', roomRoutes);
+console.log('✅ Room routes mounted');
 app.use('/api/users', userRoutes);
+console.log('✅ User routes mounted');
 app.use('/api/bookings', bookingRoutes);
+console.log('✅ Booking routes mounted');
 
 // Health check endpoint
 app.get('/health', (req, res) => {
