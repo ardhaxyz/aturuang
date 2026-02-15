@@ -1,13 +1,13 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Calendar, Clock, Users, Mail, AlertCircle, Globe, Lock } from 'lucide-react';
+import { Calendar, Clock, Users, Mail, AlertCircle, Globe, Building2 } from 'lucide-react';
 import { bookingAPI, roomAPI } from '../utils/api';
 import { Room } from '../types';
 import { useAuth } from '../contexts/AuthContext';
 
 export function BookPage() {
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const { user, isAdmin, isSuperadmin } = useAuth();
   const [rooms, setRooms] = useState<Room[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -118,13 +118,21 @@ export function BookPage() {
   const timeOptions = generateTimeOptions();
 
   // Group rooms by type
+  // Public rooms: accessible by all users
+  // Organization rooms: only accessible by users from that organization
   const publicRooms = rooms.filter(r => r.isPublic);
+
+  // For regular users: only show their org's rooms
+  // For admin/superadmin: show ALL organization rooms
   const orgRooms = rooms.filter(r => !r.isPublic && r.organizationId === user?.organizationId);
+  const otherOrgRooms = (isAdmin || isSuperadmin)
+    ? rooms.filter(r => !r.isPublic && r.organizationId !== user?.organizationId)
+    : [];
 
   const renderRoomOption = (room: Room) => (
     <option key={room.id} value={room.id}>
       {room.name} (Capacity: {room.capacity})
-      {room.isPublic ? ' - Public' : ` - ${room.organization?.name || 'Private'}`}
+      {room.isPublic ? ' - Public' : ` - ${room.organization?.name || 'Organization'}`}
     </option>
   );
 
@@ -188,16 +196,25 @@ export function BookPage() {
               className="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:outline-none focus:ring-primary-500 focus:border-primary-500 sm:text-sm rounded-md"
             >
               <option value="">Select a room</option>
-              
+
+              {/* Public Rooms - accessible by all */}
               {publicRooms.length > 0 && (
-                <optgroup label="Public Rooms">
+                <optgroup label="Public Rooms (All Users)">
                   {publicRooms.map(renderRoomOption)}
                 </optgroup>
               )}
-              
+
+              {/* Organization Rooms */}
               {orgRooms.length > 0 && (
                 <optgroup label={`${user?.organization?.name || 'Your Organization'}`}>
                   {orgRooms.map(renderRoomOption)}
+                </optgroup>
+              )}
+
+              {/* Other Organization Rooms (admin only) */}
+              {otherOrgRooms.length > 0 && (
+                <optgroup label="Other Organization Rooms">
+                  {otherOrgRooms.map(renderRoomOption)}
                 </optgroup>
               )}
             </select>
@@ -212,11 +229,11 @@ export function BookPage() {
                     <div className="text-sm">
                       <div className="flex items-center mb-1">
                         {room.isPublic ? (
-                          <><Globe size={14} className="mr-1 text-green-600 dark:text-green-400" /> <span className="text-green-700 dark:text-green-300">Public Room</span></>
+                          <><Globe size={14} className="mr-1 text-purple-600 dark:text-purple-400" /> <span className="text-purple-700 dark:text-purple-300">Public Room</span></>
                         ) : (
-                          <><Lock size={14} className="mr-1 text-blue-600 dark:text-blue-400" /> 
+                          <><Building2 size={14} className="mr-1 text-blue-600 dark:text-blue-400" />
                             <span className="text-blue-700 dark:text-blue-300">
-                              {room.organization?.name || 'Private Room'}
+                              {room.organization?.name || 'Organization Room'}
                             </span>
                           </>
                         )}
@@ -371,8 +388,8 @@ export function BookPage() {
       <div className="mt-8 bg-blue-50 dark:bg-blue-900/20 rounded-lg p-6">
         <h3 className="text-lg font-medium text-blue-900 dark:text-blue-100 mb-4">Booking Guidelines</h3>
         <ul className="space-y-2 text-sm text-blue-800 dark:text-blue-200">
-          <li>• Public rooms are available to all users</li>
-          <li>• Organization rooms are only available to organization members</li>
+          <li>• Public rooms are available to ALL users</li>
+          <li>• Organization rooms are only available to your organization</li>
           <li>• Bookings are subject to approval by your organization admin</li>
           <li>• You can view your booking status in the Dashboard or Calendar</li>
           <li>• Please cancel bookings you no longer need</li>

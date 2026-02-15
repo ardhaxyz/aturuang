@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Plus, Edit2, Trash2, Upload, DoorOpen, Users, Globe, Lock } from 'lucide-react';
+import { Plus, Edit2, Trash2, Upload, DoorOpen, Users, Globe, Building2 } from 'lucide-react';
 import { roomAPI, organizationAPI } from '../utils/api';
 import { Room, Organization } from '../types';
 import { useAuth } from '../contexts/AuthContext';
@@ -225,10 +225,10 @@ export function RoomManagementPage() {
               <div className="absolute top-2 right-2">
                 <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
                   room.isPublic
-                    ? 'bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-300'
+                    ? 'bg-purple-100 dark:bg-purple-900/30 text-purple-800 dark:text-purple-300'
                     : 'bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-300'
                 }`}>
-                  {room.isPublic ? <><Globe size={12} className="mr-1" /> Public</> : <><Lock size={12} className="mr-1" /> Private</>}
+                  {room.isPublic ? <><Globe size={12} className="mr-1" /> Public</> : <><Building2 size={12} className="mr-1" /> {room.organization?.name || 'Organization'}</>}
                 </span>
               </div>
             </div>
@@ -400,7 +400,8 @@ export function RoomManagementPage() {
                     className="h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300 rounded"
                   />
                   <label htmlFor="isPublic" className="ml-2 text-sm text-gray-700 dark:text-gray-300">
-                    Public Room (visible to all users)
+                    <Globe className="h-4 w-4 mr-1 inline" />
+                    Public Room (accessible by all users)
                   </label>
                 </div>
 
