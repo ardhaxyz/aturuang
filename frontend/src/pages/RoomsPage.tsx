@@ -82,12 +82,12 @@ export function RoomsPage() {
         )}
       </div>
 
-      {/* Pinterest-style Masonry Grid */}
-      <div className="columns-1 sm:columns-2 lg:columns-3 xl:columns-4 gap-4 space-y-4">
+      {/* Rooms Grid - Same layout as Admin Rooms */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {rooms.map((room) => (
           <div
             key={room.id}
-            className="break-inside-avoid mb-4 bg-white dark:bg-gray-800 rounded-lg shadow overflow-hidden border border-gray-200 dark:border-gray-700 cursor-pointer hover:shadow-lg transition-shadow"
+            className="bg-white dark:bg-gray-800 rounded-lg shadow overflow-hidden border border-gray-200 dark:border-gray-700 cursor-pointer hover:shadow-lg transition-shadow"
             onClick={() => openRoomModal(room)}
           >
             {/* Room Image */}

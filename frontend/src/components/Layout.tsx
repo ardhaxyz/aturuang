@@ -197,7 +197,7 @@ export function Layout({ children }: LayoutProps) {
                 <div className="text-xs text-gray-500 dark:text-gray-400 space-y-1">
                   <p>© 2026 Aturuang</p>
                   <p>for Coordinating Ministry for Food Affairs</p>
-                  <p className="pt-1">Built with ☕ + ❄️ + 🤖 by ardhaxyz</p>
+                  <p className="pt-1">Built with <span className="grayscale">☕</span> + <span className="grayscale">❄️</span> + <span className="grayscale">🤖</span> by ardhaxyz</p>
                 </div>
               </div>
             </div>
