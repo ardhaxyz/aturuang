@@ -42,6 +42,10 @@ services:
       ADMIN_PASSWORD: admin123
       # CORS
       FRONTEND_URL: http://localhost
+      # Cloudinary
+      CLOUDINARY_CLOUD_NAME: dujrwxjuw
+      CLOUDINARY_API_KEY: 643513749233391
+      CLOUDINARY_API_SECRET: sFevnFsOnBXEE7hkwm3_iG3BdGs
     volumes:
       # Persist SQLite database
       - sqlite_data:/app/prisma
