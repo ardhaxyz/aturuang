@@ -213,7 +213,7 @@ export function RoomManagementPage() {
             <div className="h-40 bg-gray-200 dark:bg-gray-700 relative">
               {room.imageUrl ? (
                 <img
-                  src={`${import.meta.env.VITE_API_URL || ''}${room.imageUrl}`}
+                  src={room.imageUrl?.startsWith('http') ? room.imageUrl : `${import.meta.env.VITE_API_URL || ''}${room.imageUrl}`}
                   alt={room.name}
                   className="w-full h-full object-cover"
                 />
