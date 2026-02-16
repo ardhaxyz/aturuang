@@ -180,13 +180,17 @@ async function createRoom(req, res) {
       }
     }
 
+    // Determine if room is public based on organizationId
+    // If no organization selected, room is public
+    const isPublicRoom = !organizationId;
+
     const room = await prisma.room.create({
       data: {
         name,
         capacity: parseInt(capacity),
         facilities: facilities ? JSON.stringify(facilities) : '[]',
         imageUrl,
-        isPublic: isPublic || false,
+        isPublic: isPublicRoom,
         organizationId: organizationId || null,
         isActive: true,
       },
@@ -260,6 +264,13 @@ async function updateRoom(req, res) {
       }
     }
 
+    // Determine isPublic based on organizationId changes
+    let updateIsPublic = undefined;
+    if (organizationId !== undefined) {
+      // If organizationId is being updated
+      updateIsPublic = !organizationId; // true if no org, false if has org
+    }
+
     const room = await prisma.room.update({
       where: { id },
       data: {
@@ -267,7 +278,7 @@ async function updateRoom(req, res) {
         capacity: capacity ? parseInt(capacity) : undefined,
         facilities: facilities ? JSON.stringify(facilities) : undefined,
         imageUrl,
-        isPublic: isPublic !== undefined ? isPublic : undefined,
+        isPublic: updateIsPublic,
         isActive: isActive !== undefined ? isActive : undefined,
         organizationId: user.role === 'superadmin' ? organizationId : undefined,
       },
