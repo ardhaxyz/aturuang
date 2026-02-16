@@ -6,6 +6,7 @@ const {
   createBooking,
   approveBooking,
   deleteBooking,
+  revertToPending,
 } = require('../controllers/bookingController');
 const { authenticateToken, requireAdmin } = require('../utils/auth');
 const { validate, bookingSchema, approvalSchema } = require('../utils/validation');
@@ -31,6 +32,14 @@ router.patch(
   requireAdmin,
   validate(approvalSchema),
   approveBooking
+);
+
+// PATCH /api/bookings/:id/pending - Revert booking to pending (admin only)
+router.patch(
+  '/:id/pending',
+  authenticateToken,
+  requireAdmin,
+  revertToPending
 );
 
 // DELETE /api/bookings/:id - Delete booking (admin only)

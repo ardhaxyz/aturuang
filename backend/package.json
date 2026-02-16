@@ -1,6 +1,6 @@
 {
   "name": "aturuang-backend",
-  "version": "1.0.0",
+  "version": "0.5.0",
   "description": "Backend API for Aturuang - Meeting Room Management System",
   "main": "src/index.js",
   "scripts": {

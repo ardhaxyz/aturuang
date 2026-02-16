@@ -405,10 +405,86 @@ async function deleteBooking(req, res) {
   }
 }
 
+/**
+ * Revert booking to pending status (Admin only)
+ * PATCH /api/bookings/:id/pending
+ */
+async function revertToPending(req, res) {
+  try {
+    const { id } = req.params;
+    const user = req.user;
+
+    // Validate booking exists
+    const existingBooking = await prisma.booking.findUnique({
+      where: { id },
+      include: {
+        room: true,
+      },
+    });
+
+    if (!existingBooking) {
+      return res.status(404).json({
+        success: false,
+        message: 'Booking not found',
+      });
+    }
+
+    // Check permissions
+    if (user.role !== 'superadmin') {
+      if (user.role === 'org_admin') {
+        if (existingBooking.room.organizationId !== user.organizationId) {
+          return res.status(403).json({
+            success: false,
+            message: 'Can only revert bookings for your organization\'s rooms',
+          });
+        }
+      } else {
+        return res.status(403).json({
+          success: false,
+          message: 'Admin access required',
+        });
+      }
+    }
+
+    // Update booking status to pending
+    const booking = await prisma.booking.update({
+      where: { id },
+      data: {
+        status: 'pending',
+      },
+      include: {
+        room: true,
+      },
+    });
+
+    // Parse facilities JSON string to array
+    const bookingWithParsedFacilities = {
+      ...booking,
+      room: booking.room ? {
+        ...booking.room,
+        facilities: booking.room.facilities ? JSON.parse(booking.room.facilities) : [],
+      } : null,
+    };
+
+    return res.json({
+      success: true,
+      message: 'Booking reverted to pending successfully',
+      data: { booking: bookingWithParsedFacilities },
+    });
+  } catch (error) {
+    console.error('Revert booking error:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'Failed to revert booking',
+    });
+  }
+}
+
 module.exports = {
   getAllBookings,
   getBookingById,
   createBooking,
   approveBooking,
   deleteBooking,
+  revertToPending,
 };

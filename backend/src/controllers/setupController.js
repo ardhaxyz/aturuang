@@ -13,11 +13,22 @@ const prisma = new PrismaClient();
  */
 function parseCSV(csvContent) {
   const lines = csvContent.trim().split('\n');
+  
+  // Handle empty file or file with only headers
+  if (lines.length < 2) {
+    return [];
+  }
+  
   const headers = lines[0].split(',').map(h => h.trim());
   const results = [];
   
   for (let i = 1; i < lines.length; i++) {
-    const values = lines[i].split(',').map(v => v.trim());
+    const line = lines[i].trim();
+    
+    // Skip empty lines
+    if (!line) continue;
+    
+    const values = line.split(',').map(v => v.trim());
     const obj = {};
     headers.forEach((header, index) => {
       obj[header] = values[index] || '';
@@ -202,9 +213,14 @@ async function importOrganizations(req, res) {
     // Clean up uploaded file
     fs.unlinkSync(req.file.path);
 
+    // If no data rows in CSV, treat as success (nothing to import)
+    const hasData = organizations.length > 0;
+    
     return res.json({
-      success: results.imported > 0,
-      message: `Imported ${results.imported} organizations`,
+      success: hasData ? results.imported > 0 : true,
+      message: hasData 
+        ? `Imported ${results.imported} organizations` 
+        : 'No data found in CSV file (only headers)',
       data: results,
     });
   } catch (error) {
@@ -317,9 +333,14 @@ async function importUsers(req, res) {
     // Clean up uploaded file
     fs.unlinkSync(req.file.path);
 
+    // If no data rows in CSV, treat as success (nothing to import)
+    const hasData = users.length > 0;
+    
     return res.json({
-      success: results.imported > 0,
-      message: `Imported ${results.imported} users`,
+      success: hasData ? results.imported > 0 : true,
+      message: hasData 
+        ? `Imported ${results.imported} users` 
+        : 'No data found in CSV file (only headers)',
       data: results,
     });
   } catch (error) {

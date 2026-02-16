@@ -4,7 +4,7 @@
 
 ![License](https://img.shields.io/badge/license-MIT-blue.svg)
 ![Docker](https://img.shields.io/badge/docker-ready-brightgreen.svg)
-![Version](https://img.shields.io/badge/version-0.4.1-blue.svg)
+![Version](https://img.shields.io/badge/version-0.5.0-blue.svg)
 
 ## 🌟 Features
 
@@ -323,7 +323,7 @@ docker compose up -d --build
 
 ## 📝 Changelog
 
-### Version 0.4.1
+### Version 0.5.0
 - ✅ Dashboard Quick Actions simplified - removed redundant buttons (Book a Room only)
 - ✅ Mobile FAB shape updated to square-rounded (rounded-lg) for UI consistency
 - ✅ Mobile stats grid changed to 2 columns (reduced vertical scrolling)

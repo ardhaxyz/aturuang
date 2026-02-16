@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Calendar, Clock, Users, Mail, AlertCircle, Globe, Building2 } from 'lucide-react';
+import { Calendar, Clock, Users, Mail, AlertCircle, X, CheckCircle } from 'lucide-react';
 import { bookingAPI, roomAPI } from '../utils/api';
 import { Room } from '../types';
 import { useAuth } from '../contexts/AuthContext';
@@ -13,6 +13,7 @@ export function BookPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+  const [showConfirmation, setShowConfirmation] = useState(false);
 
   // Form state
   const [formData, setFormData] = useState({
@@ -52,22 +53,30 @@ export function BookPage() {
     setFormData(prev => ({ ...prev, [name]: value }));
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
-    setSuccess('');
+    
+    // Validate form
+    if (!formData.roomId || !formData.title || !formData.bookerName) {
+      setError('Please fill in all required fields');
+      return;
+    }
+
+    if (formData.startTime >= formData.endTime) {
+      setError('End time must be after start time');
+      return;
+    }
+    
+    // Show confirmation modal
+    setShowConfirmation(true);
+  };
+
+  const handleConfirmBooking = async () => {
+    setShowConfirmation(false);
     setIsSubmitting(true);
 
     try {
-      // Validate form
-      if (!formData.roomId || !formData.title || !formData.bookerName) {
-        throw new Error('Please fill in all required fields');
-      }
-
-      if (formData.startTime >= formData.endTime) {
-        throw new Error('End time must be after start time');
-      }
-
       const response = await bookingAPI.create(formData);
       
       if (response.success) {
@@ -218,36 +227,6 @@ export function BookPage() {
                 </optgroup>
               )}
             </select>
-            
-            {/* Room info */}
-            {formData.roomId && (
-              <div className="mt-2 p-3 bg-gray-50 dark:bg-gray-700/50 rounded-md">
-                {(() => {
-                  const room = rooms.find(r => r.id === formData.roomId);
-                  if (!room) return null;
-                  return (
-                    <div className="text-sm">
-                      <div className="flex items-center mb-1">
-                        {room.isPublic ? (
-                          <><Globe size={14} className="mr-1 text-purple-600 dark:text-purple-400" /> <span className="text-purple-700 dark:text-purple-300">Public Room</span></>
-                        ) : (
-                          <><Building2 size={14} className="mr-1 text-blue-600 dark:text-blue-400" />
-                            <span className="text-blue-700 dark:text-blue-300">
-                              {room.organization?.name || 'Organization Room'}
-                            </span>
-                          </>
-                        )}
-                      </div>
-                      {room.facilities && room.facilities.length > 0 && (
-                        <div className="text-gray-600 dark:text-gray-400">
-                          Facilities: {room.facilities.join(', ')}
-                        </div>
-                      )}
-                    </div>
-                  );
-                })()}
-              </div>
-            )}
           </div>
 
           {/* Date and Time */}
@@ -381,6 +360,52 @@ export function BookPage() {
               {isSubmitting ? 'Creating Booking...' : 'Create Booking'}
             </button>
           </div>
+
+          {/* Confirmation Modal */}
+          {showConfirmation && (
+            <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50 flex items-center justify-center">
+              <div className="relative mx-auto p-5 border w-96 shadow-lg rounded-md bg-white dark:bg-gray-800">
+                <div className="mt-3 text-center">
+                  <div className="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-primary-100 dark:bg-primary-900/30 mb-4">
+                    <CheckCircle className="h-6 w-6 text-primary-600 dark:text-primary-400" />
+                  </div>
+                  <h3 className="text-lg leading-6 font-medium text-gray-900 dark:text-white">
+                    Confirm Your Booking
+                  </h3>
+                  <div className="mt-2 px-7 py-3">
+                    <div className="text-sm text-gray-500 dark:text-gray-400 space-y-2 text-left">
+                      <p><strong>Room:</strong> {rooms.find(r => r.id === formData.roomId)?.name}</p>
+                      <p><strong>Date:</strong> {formData.date}</p>
+                      <p><strong>Time:</strong> {formData.startTime} - {formData.endTime}</p>
+                      <p><strong>Title:</strong> {formData.title}</p>
+                      <p><strong>Booker:</strong> {formData.bookerName}</p>
+                    </div>
+                  </div>
+                  <div className="items-center px-4 py-3 flex justify-center space-x-4">
+                    <button
+                      onClick={() => setShowConfirmation(false)}
+                      className="px-4 py-2 bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200 text-base font-medium rounded-md w-24 hover:bg-gray-300 dark:hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-gray-300"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      onClick={handleConfirmBooking}
+                      disabled={isSubmitting}
+                      className="px-4 py-2 bg-primary-600 text-white text-base font-medium rounded-md w-24 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-primary-500 disabled:opacity-50"
+                    >
+                      {isSubmitting ? '...' : 'Confirm'}
+                    </button>
+                  </div>
+                </div>
+                <button
+                  onClick={() => setShowConfirmation(false)}
+                  className="absolute top-2 right-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+                >
+                  <X className="h-5 w-5" />
+                </button>
+              </div>
+            </div>
+          )}
         </form>
       </div>
 

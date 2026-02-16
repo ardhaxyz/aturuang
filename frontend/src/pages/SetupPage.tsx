@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTheme } from '../contexts/ThemeContext';
-import { api } from '../utils/api';
+import api from '../utils/api';
 import { 
   Calendar, 
   CheckCircle, 
@@ -18,11 +18,6 @@ import {
   Shield
 } from 'lucide-react';
 
-interface SetupStatus {
-  needsSetup: boolean;
-  message: string;
-}
-
 interface CsvResult {
   success: boolean;
   imported: number;
@@ -34,7 +29,6 @@ export function SetupPage() {
   const { theme, toggleTheme } = useTheme();
   const [currentStep, setCurrentStep] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
-  const [setupStatus, setSetupStatus] = useState<SetupStatus | null>(null);
   
   // Superadmin form state
   const [superadminData, setSuperadminData] = useState({
@@ -60,8 +54,7 @@ export function SetupPage() {
 
   const checkSetupStatus = async () => {
     try {
-      const response = await api.get('/setup/status');
-      setSetupStatus(response.data.data);
+      const response = await api.get('/api/setup/status');
       if (!response.data.data.needsSetup) {
         navigate('/login');
       }
@@ -87,7 +80,7 @@ export function SetupPage() {
     }
 
     try {
-      await api.post('/setup', {
+      await api.post('/api/setup', {
         username: superadminData.username,
         password: superadminData.password
       });
@@ -108,7 +101,7 @@ export function SetupPage() {
     formData.append('file', orgCsvFile);
 
     try {
-      const response = await api.post('/setup/import/organizations', formData, {
+      const response = await api.post('/api/setup/import/organizations', formData, {
         headers: {
           'Content-Type': 'multipart/form-data'
         }
@@ -135,7 +128,7 @@ export function SetupPage() {
     formData.append('file', userCsvFile);
 
     try {
-      const response = await api.post('/setup/import/users', formData, {
+      const response = await api.post('/api/setup/import/users', formData, {
         headers: {
           'Content-Type': 'multipart/form-data'
         }

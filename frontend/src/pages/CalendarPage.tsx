@@ -42,35 +42,44 @@ export function CalendarPage() {
     }
   };
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'approved':
-        return '#10b981';
-      case 'pending':
-        return '#f59e0b';
-      case 'rejected':
-        return '#ef4444';
-      default:
-        return '#6b7280';
-    }
+  // Room colors - assign different colors per room
+  const getRoomColors = () => {
+    const colors = [
+      '#3b82f6', // blue
+      '#10b981', // green
+      '#f59e0b', // amber
+      '#ef4444', // red
+      '#8b5cf6', // violet
+      '#ec4899', // pink
+      '#06b6d4', // cyan
+      '#84cc16', // lime
+      '#f97316', // orange
+      '#6366f1', // indigo
+    ];
+    const roomColors: Record<string, string> = {};
+    rooms.forEach((room, index) => {
+      roomColors[room.id] = colors[index % colors.length];
+    });
+    return roomColors;
   };
 
-  const getStatusBorder = (status: string) => {
-    switch (status) {
-      case 'approved':
-        return 'border-l-green-500';
-      case 'pending':
-        return 'border-l-yellow-500';
-      case 'rejected':
-        return 'border-l-red-500';
-      default:
-        return 'border-l-gray-500';
-    }
+  const roomColors = getRoomColors();
+
+  const getRoomColor = (roomId: string) => {
+    return roomColors[roomId] || '#6b7280';
   };
 
   const formatEvents = () => {
     const filteredBookings = bookings.filter(booking => {
-      if (selectedRoom !== 'all' && booking.roomId !== selectedRoom) return false;
+      // Filter out rejected bookings from calendar
+      if (booking.status === 'rejected') return false;
+      // Handle room filter
+      if (selectedRoom === 'public') {
+        // Show only public rooms
+        if (!booking.room?.isPublic) return false;
+      } else if (selectedRoom !== 'all' && booking.roomId !== selectedRoom) {
+        return false;
+      }
       if (selectedStatus !== 'all' && booking.status !== selectedStatus) return false;
       return true;
     });
@@ -79,20 +88,26 @@ export function CalendarPage() {
       const date = new Date(booking.date);
       const [startHour, startMin] = booking.startTime.split(':').map(Number);
       const [endHour, endMin] = booking.endTime.split(':').map(Number);
-      
+
       const startDate = new Date(date);
       startDate.setHours(startHour, startMin, 0, 0);
       
       const endDate = new Date(date);
       endDate.setHours(endHour, endMin, 0, 0);
 
+      // Color based on ROOM, not status
+      const roomColor = getRoomColor(booking.roomId);
+      
+      // Status emoji prefix
+      const statusEmoji = booking.status === 'approved' ? '✅' : '⏳';
+
       return {
         id: booking.id,
-        title: `${booking.title}`,
+        title: `${statusEmoji} ${booking.title}`,
         start: startDate.toISOString(),
         end: endDate.toISOString(),
-        backgroundColor: getStatusColor(booking.status),
-        borderColor: getStatusColor(booking.status),
+        backgroundColor: roomColor,
+        borderColor: roomColor,
         extendedProps: {
           room: booking.room?.name,
           booker: booking.bookerName,
@@ -180,7 +195,6 @@ export function CalendarPage() {
               <option value="all">All Statuses</option>
               <option value="approved">Approved</option>
               <option value="pending">Pending</option>
-              <option value="rejected">Rejected</option>
             </select>
           </div>
 
@@ -194,21 +208,51 @@ export function CalendarPage() {
           </div>
         </div>
 
-        {/* Legend */}
+        {/* Room Legend - Mini Cards */}
         <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
-          <div className="flex flex-wrap gap-4 text-sm">
-            <div className="flex items-center">
-              <div className="h-3 w-3 rounded-full bg-green-500 mr-2"></div>
-              <span className="text-gray-600 dark:text-gray-400">Approved</span>
-            </div>
-            <div className="flex items-center">
-              <div className="h-3 w-3 rounded-full bg-yellow-500 mr-2"></div>
-              <span className="text-gray-600 dark:text-gray-400">Pending</span>
-            </div>
-            <div className="flex items-center">
-              <div className="h-3 w-3 rounded-full bg-red-500 mr-2"></div>
-              <span className="text-gray-600 dark:text-gray-400">Rejected</span>
-            </div>
+          <div className="flex flex-wrap gap-2">
+            {/* All Rooms Button */}
+            <button
+              onClick={() => setSelectedRoom('all')}
+              className={`px-3 py-1.5 rounded-md text-xs font-medium transition-all ${
+                selectedRoom === 'all'
+                  ? 'ring-2 ring-offset-1 ring-primary-500 bg-primary-600 text-white'
+                  : 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600'
+              }`}
+            >
+              All Rooms
+            </button>
+
+            {/* Public Rooms Button */}
+            <button
+              onClick={() => setSelectedRoom('public')}
+              className={`px-3 py-1.5 rounded-md text-xs font-medium transition-all ${
+                selectedRoom === 'public'
+                  ? 'ring-2 ring-offset-1 ring-purple-500 bg-purple-600 text-white'
+                  : 'bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 hover:bg-purple-200 dark:hover:bg-purple-900/50'
+              }`}
+            >
+              Public Rooms
+            </button>
+
+            {rooms.map((room) => (
+              <button
+                key={room.id}
+                onClick={() => setSelectedRoom(selectedRoom === room.id ? 'all' : room.id)}
+                className={`px-3 py-1.5 rounded-md text-xs font-medium transition-all ${
+                  selectedRoom === room.id
+                    ? 'ring-2 ring-offset-1'
+                    : 'opacity-70 hover:opacity-100'
+                }`}
+                style={{
+                  backgroundColor: getRoomColor(room.id),
+                  color: 'white',
+                  '--tw-ring-color': getRoomColor(room.id),
+                } as React.CSSProperties}
+              >
+                {room.name}
+              </button>
+            ))}
           </div>
         </div>
       </div>
@@ -319,8 +363,8 @@ export function CalendarPage() {
             </thead>
             <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
               {bookings.slice(0, 10).map((booking) => (
-                <tr 
-                  key={booking.id} 
+                <tr
+                  key={booking.id}
                   className="hover:bg-gray-50 dark:hover:bg-gray-700/50 cursor-pointer"
                   onClick={() => {
                     const date = new Date(booking.date);
@@ -331,7 +375,7 @@ export function CalendarPage() {
                   }}
                 >
                   <td className="px-6 py-4">
-                    <div className={`pl-3 border-l-4 ${getStatusBorder(booking.status)}`}>
+                    <div className="pl-3 border-l-4" style={{ borderLeftColor: getRoomColor(booking.roomId) }}>
                       <div className="text-sm font-medium text-gray-900 dark:text-white">{booking.title}</div>
                       <div className="text-sm text-gray-500 dark:text-gray-400">{booking.room?.name}</div>
                     </div>

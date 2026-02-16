@@ -223,8 +223,40 @@ export const bookingAPI = {
     return response.data;
   },
 
+  revertToPending: async (id: string) => {
+    const response = await api.patch<ApiResponse<{ booking: Booking }>>(`/api/bookings/${id}/pending`);
+    return response.data;
+  },
+
   delete: async (id: string) => {
     const response = await api.delete<ApiResponse<null>>(`/api/bookings/${id}`);
+    return response.data;
+  },
+};
+
+export const settingsAPI = {
+  getAll: async () => {
+    const response = await api.get<ApiResponse<{
+      welcomeTitle: string;
+      welcomeEmoji: string;
+      welcomeSubtitle: string;
+      welcomeDescription: string;
+    }>>('/api/settings');
+    return response.data;
+  },
+
+  update: async (data: {
+    welcomeTitle: string;
+    welcomeEmoji: string;
+    welcomeSubtitle: string;
+    welcomeDescription: string;
+  }) => {
+    const response = await api.put<ApiResponse<{
+      welcomeTitle: string;
+      welcomeEmoji: string;
+      welcomeSubtitle: string;
+      welcomeDescription: string;
+    }>>('/api/settings', data);
     return response.data;
   },
 };
