@@ -49,7 +49,7 @@ export function LoginPage() {
           Aturuang
         </h2>
         <p className="mt-2 text-center text-sm text-gray-600 dark:text-gray-400">
-          Sign in to access the meeting room booking system
+          Meeting Room Management System for Coordinating Ministry for Food Affairs
         </p>
       </div>
 

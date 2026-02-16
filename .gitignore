@@ -44,7 +44,6 @@ postgres_data/
 
 # AI/Claude files
 claude.md
-CLAUDE.md
 
 # Progress/Session logs (keep local only)
 PROGRESS.md

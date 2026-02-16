@@ -19,6 +19,23 @@
 - ✅ **Mobile Responsive** - Works on all devices
 - ✅ **Pagination** - Bookings list with pagination (10 per page)
 
+### 🆕 What's New in v0.5.0
+
+#### Major Features
+- **Setup Wizard** - One-time setup with superadmin creation, CSV batch import for organizations and users
+- **Welcome Box Customization** - Superadmin can customize welcome message, emoji, subtitle, and description
+- **Calendar Improvements** - Room-based event colors, mini room selector buttons, status emoji indicators
+- **CSV Import** - Bulk import organizations and users via CSV in admin panel
+- **Back to Pending** - Admin can revert approved/rejected bookings back to pending status
+- **Confirmation Popup** - Booking confirmation modal with details before submission
+
+#### UI/UX Improvements
+- **Responsive Layout** - Max-width 1024px for better readability
+- **Header Improvements** - Removed username from header, swapped menu positions on mobile
+- **Status Indicators** - Emoji-based status (✅ Approved, ⏳ Pending, ❌ Rejected)
+- **Organization Column** - Added organization info to booking lists
+- **Room Legend** - Clickable mini room cards in calendar for quick filtering
+
 ### Admin Features
 - 📊 **Unified Dashboard** - Manage all operations from one page
 - 🏢 **Organization Management** - Create and manage organizations (superadmin)
@@ -50,6 +67,13 @@ curl -X POST http://localhost:3001/api/setup \
 - Frontend: http://localhost
 - Backend API: http://localhost:3001
 - Health Check: http://localhost:3001/health
+
+### Production Deployment
+
+**Live Application:**
+- Frontend: https://aturuang.ardha.xyz
+- Backend API: https://aturuang.onrender.com
+- Primary Domain: aturuang.ardha.xyz
 
 ## 📋 Default Login
 
