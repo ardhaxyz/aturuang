@@ -1,6 +1,6 @@
 const { PrismaClient } = require('@prisma/client');
 const { deleteFile, getFileUrl } = require('../utils/upload');
-const { uploadToImgur } = require('../services/imgurService');
+const { uploadToCloudinary, deleteFromCloudinary } = require('../services/cloudinaryService');
 
 const prisma = new PrismaClient();
 
@@ -185,15 +185,15 @@ async function createRoom(req, res) {
     // If no organization selected, room is public
     const isPublicRoom = !organizationId;
 
-    // Handle image upload to Imgur
+    // Handle image upload to Cloudinary
     let finalImageUrl = imageUrl;
     if (req.file) {
       try {
-        const imgurResult = await uploadToImgur(req.file.buffer, req.file.originalname);
-        finalImageUrl = imgurResult.url;
-        console.log('Image uploaded to Imgur:', finalImageUrl);
+        const cloudinaryResult = await uploadToCloudinary(req.file.buffer, req.file.originalname);
+        finalImageUrl = cloudinaryResult.url;
+        console.log('Image uploaded to Cloudinary:', finalImageUrl);
       } catch (uploadError) {
-        console.error('Failed to upload image to Imgur:', uploadError.message);
+        console.error('Failed to upload image to Cloudinary:', uploadError.message);
         // Continue without image - room will be created without image
       }
     }
@@ -301,15 +301,15 @@ async function updateRoom(req, res) {
       updateIsPublic = !normalizedOrgId; // true if no org (null/empty), false if has org
     }
 
-    // Handle image upload to Imgur
+    // Handle image upload to Cloudinary
     let finalImageUrl = imageUrl;
     if (req.file) {
       try {
-        const imgurResult = await uploadToImgur(req.file.buffer, req.file.originalname);
-        finalImageUrl = imgurResult.url;
-        console.log('Image uploaded to Imgur:', finalImageUrl);
+        const cloudinaryResult = await uploadToCloudinary(req.file.buffer, req.file.originalname);
+        finalImageUrl = cloudinaryResult.url;
+        console.log('Image uploaded to Cloudinary:', finalImageUrl);
       } catch (uploadError) {
-        console.error('Failed to upload image to Imgur:', uploadError.message);
+        console.error('Failed to upload image to Cloudinary:', uploadError.message);
         // Continue with existing image URL or null
       }
     }
@@ -453,14 +453,14 @@ async function uploadRoomImage(req, res) {
     // Upload to Imgur
     let imageUrl;
     try {
-      const imgurResult = await uploadToImgur(req.file.buffer, req.file.originalname);
-      imageUrl = imgurResult.url;
-      console.log('Room image uploaded to Imgur:', imageUrl);
+      const cloudinaryResult = await uploadToCloudinary(req.file.buffer, req.file.originalname);
+      imageUrl = cloudinaryResult.url;
+      console.log('Room image uploaded to Cloudinary:', imageUrl);
     } catch (uploadError) {
-      console.error('Failed to upload room image to Imgur:', uploadError.message);
+      console.error('Failed to upload room image to Cloudinary:', uploadError.message);
       return res.status(500).json({
         success: false,
-        message: 'Failed to upload image to Imgur',
+        message: 'Failed to upload image to Cloudinary',
       });
     }
 
@@ -520,10 +520,12 @@ async function deleteRoomImage(req, res) {
       }
     }
 
-    // Delete local image file if exists (skip for Imgur URLs)
-    if (existingRoom.imageUrl && !existingRoom.imageUrl.includes('imgur.com')) {
-      const filename = existingRoom.imageUrl.split('/').pop();
-      await deleteFile(filename);
+    // Delete Cloudinary image if exists
+    if (existingRoom.imageUrl && existingRoom.imageUrl.includes('cloudinary.com')) {
+      const publicId = extractCloudinaryPublicId(existingRoom.imageUrl);
+      if (publicId) {
+        await deleteFromCloudinary(publicId);
+      }
     }
 
     // Update room to remove image URL
@@ -543,6 +545,11 @@ async function deleteRoomImage(req, res) {
       message: 'Failed to delete image',
     });
   }
+}
+
+function extractCloudinaryPublicId(url) {
+  const match = url.match(/aturuang\/([^.]+)/);
+  return match ? `aturuang/${match[1]}` : null;
 }
 
 module.exports = {
