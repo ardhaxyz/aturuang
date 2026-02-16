@@ -437,8 +437,12 @@ async function uploadRoomImage(req, res) {
 
     // Check permissions
     if (user.role === 'org_admin') {
-      if (existingRoom.organizationId !== user.organizationId) {
-        await deleteFile(req.file.filename);
+      // Org admin can upload images to:
+      // 1. Public rooms (organizationId: null)
+      // 2. Rooms in their own organization
+      const isPublicRoom = !existingRoom.organizationId;
+      
+      if (!isPublicRoom && existingRoom.organizationId !== user.organizationId) {
         return res.status(403).json({
           success: false,
           message: 'Can only update rooms in your organization',
@@ -446,14 +450,21 @@ async function uploadRoomImage(req, res) {
       }
     }
 
-    // Delete old image if exists
-    if (existingRoom.imageUrl) {
-      const oldFilename = existingRoom.imageUrl.split('/').pop();
-      await deleteFile(oldFilename);
+    // Upload to Imgur
+    let imageUrl;
+    try {
+      const imgurResult = await uploadToImgur(req.file.buffer, req.file.originalname);
+      imageUrl = imgurResult.url;
+      console.log('Room image uploaded to Imgur:', imageUrl);
+    } catch (uploadError) {
+      console.error('Failed to upload room image to Imgur:', uploadError.message);
+      return res.status(500).json({
+        success: false,
+        message: 'Failed to upload image to Imgur',
+      });
     }
 
     // Update room with new image URL
-    const imageUrl = getFileUrl(req.file.filename);
     const room = await prisma.room.update({
       where: { id },
       data: { imageUrl },
@@ -466,10 +477,6 @@ async function uploadRoomImage(req, res) {
     });
   } catch (error) {
     console.error('Upload room image error:', error);
-    // Clean up uploaded file on error
-    if (req.file) {
-      await deleteFile(req.file.filename);
-    }
     return res.status(500).json({
       success: false,
       message: 'Failed to upload image',
@@ -500,7 +507,12 @@ async function deleteRoomImage(req, res) {
 
     // Check permissions
     if (user.role === 'org_admin') {
-      if (existingRoom.organizationId !== user.organizationId) {
+      // Org admin can delete images from:
+      // 1. Public rooms (organizationId: null)
+      // 2. Rooms in their own organization
+      const isPublicRoom = !existingRoom.organizationId;
+      
+      if (!isPublicRoom && existingRoom.organizationId !== user.organizationId) {
         return res.status(403).json({
           success: false,
           message: 'Can only update rooms in your organization',
@@ -508,8 +520,8 @@ async function deleteRoomImage(req, res) {
       }
     }
 
-    // Delete image file if exists
-    if (existingRoom.imageUrl) {
+    // Delete local image file if exists (skip for Imgur URLs)
+    if (existingRoom.imageUrl && !existingRoom.imageUrl.includes('imgur.com')) {
       const filename = existingRoom.imageUrl.split('/').pop();
       await deleteFile(filename);
     }
