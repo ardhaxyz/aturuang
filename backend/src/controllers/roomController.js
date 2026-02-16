@@ -262,18 +262,31 @@ async function updateRoom(req, res) {
 
     // Check permissions
     if (user.role === 'org_admin') {
-      // Can only update own org rooms
-      if (existingRoom.organizationId !== user.organizationId) {
+      // Org admin can update:
+      // 1. Public rooms (organizationId: null)
+      // 2. Rooms in their own organization
+      const isPublicRoom = !existingRoom.organizationId;
+      
+      if (!isPublicRoom && existingRoom.organizationId !== user.organizationId) {
         return res.status(403).json({
           success: false,
           message: 'Can only update rooms in your organization',
         });
       }
-      // Cannot change organization
-      if (organizationId && organizationId !== user.organizationId) {
+      
+      // Cannot change organization of non-public rooms
+      if (!isPublicRoom && organizationId && organizationId !== user.organizationId) {
         return res.status(403).json({
           success: false,
           message: 'Cannot change room organization',
+        });
+      }
+      
+      // Org admin cannot convert public room to org room (only superadmin can)
+      if (isPublicRoom && organizationId && organizationId !== user.organizationId) {
+        return res.status(403).json({
+          success: false,
+          message: 'Cannot assign public room to another organization',
         });
       }
     }
