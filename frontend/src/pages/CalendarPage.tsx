@@ -73,7 +73,13 @@ export function CalendarPage() {
     const filteredBookings = bookings.filter(booking => {
       // Filter out rejected bookings from calendar
       if (booking.status === 'rejected') return false;
-      if (selectedRoom !== 'all' && booking.roomId !== selectedRoom) return false;
+      // Handle room filter
+      if (selectedRoom === 'public') {
+        // Show only public rooms
+        if (!booking.room?.isPublic) return false;
+      } else if (selectedRoom !== 'all' && booking.roomId !== selectedRoom) {
+        return false;
+      }
       if (selectedStatus !== 'all' && booking.status !== selectedStatus) return false;
       return true;
     });
@@ -205,6 +211,30 @@ export function CalendarPage() {
         {/* Room Legend - Mini Cards */}
         <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
           <div className="flex flex-wrap gap-2">
+            {/* All Rooms Button */}
+            <button
+              onClick={() => setSelectedRoom('all')}
+              className={`px-3 py-1.5 rounded-md text-xs font-medium transition-all ${
+                selectedRoom === 'all'
+                  ? 'ring-2 ring-offset-1 ring-primary-500 bg-primary-600 text-white'
+                  : 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600'
+              }`}
+            >
+              All Rooms
+            </button>
+
+            {/* Public Rooms Button */}
+            <button
+              onClick={() => setSelectedRoom('public')}
+              className={`px-3 py-1.5 rounded-md text-xs font-medium transition-all ${
+                selectedRoom === 'public'
+                  ? 'ring-2 ring-offset-1 ring-purple-500 bg-purple-600 text-white'
+                  : 'bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 hover:bg-purple-200 dark:hover:bg-purple-900/50'
+              }`}
+            >
+              Public Rooms
+            </button>
+
             {rooms.map((room) => (
               <button
                 key={room.id}
