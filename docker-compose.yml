@@ -30,8 +30,8 @@ services:
     ports:
       - "3001:3001"
     environment:
-      # Database (SQLite)
-      DATABASE_URL: file:./dev.db
+      # Database (PostgreSQL)
+      DATABASE_URL: postgresql://aturuang:aturuang_password@postgres:5432/aturuang
       # JWT Secret
       JWT_SECRET: your-super-secret-jwt-key-min-32-chars-change-this
       # Server
@@ -46,9 +46,8 @@ services:
       CLOUDINARY_CLOUD_NAME: dujrwxjuw
       CLOUDINARY_API_KEY: 643513749233391
       CLOUDINARY_API_SECRET: sFevnFsOnBXEE7hkwm3_iG3BdGs
-    volumes:
-      # Persist SQLite database
-      - sqlite_data:/app/prisma
+    depends_on:
+      - postgres
     networks:
       - aturuang-network
     restart: unless-stopped
@@ -59,9 +58,28 @@ services:
       retries: 3
       start_period: 10s
 
+  # PostgreSQL Database
+  postgres:
+    image: postgres:15-alpine
+    container_name: aturuang-postgres
+    environment:
+      POSTGRES_USER: aturuang
+      POSTGRES_PASSWORD: aturuang_password
+      POSTGRES_DB: aturuang
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - aturuang-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U aturuang -d aturuang"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
 # Named volumes for persistence
 volumes:
-  sqlite_data:
+  postgres_data:
     driver: local
 
 # Custom network

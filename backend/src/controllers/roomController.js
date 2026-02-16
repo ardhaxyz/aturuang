@@ -4,6 +4,11 @@ const { uploadToCloudinary, deleteFromCloudinary } = require('../services/cloudi
 
 const prisma = new PrismaClient();
 
+function generatePlaceholderImage(roomName) {
+  const encodedName = encodeURIComponent(roomName || 'Meeting Room');
+  return `https://ui-avatars.com/api/?name=${encodedName}&background=4F46E5&color=fff&size=400&font-size=0.33&bold=true`;
+}
+
 /**
  * Room Controller
  * Manages meeting rooms with organization support
@@ -189,13 +194,22 @@ async function createRoom(req, res) {
     let finalImageUrl = imageUrl;
     if (req.file) {
       try {
-        const cloudinaryResult = await uploadToCloudinary(req.file.buffer, req.file.originalname);
-        finalImageUrl = cloudinaryResult.url;
-        console.log('Image uploaded to Cloudinary:', finalImageUrl);
+        // With Cloudinary storage, req.file.path contains the Cloudinary URL
+        if (req.file && req.file.path) {
+          finalImageUrl = req.file.path;
+          console.log('Image uploaded to Cloudinary:', finalImageUrl);
+        } else {
+          throw new Error('No file path returned from upload');
+        }
       } catch (uploadError) {
         console.error('Failed to upload image to Cloudinary:', uploadError.message);
         // Continue without image - room will be created without image
       }
+    }
+    
+    // Generate placeholder image if no image provided
+    if (!finalImageUrl) {
+      finalImageUrl = generatePlaceholderImage(name);
     }
 
     const room = await prisma.room.create({
@@ -305,9 +319,13 @@ async function updateRoom(req, res) {
     let finalImageUrl = imageUrl;
     if (req.file) {
       try {
-        const cloudinaryResult = await uploadToCloudinary(req.file.buffer, req.file.originalname);
-        finalImageUrl = cloudinaryResult.url;
-        console.log('Image uploaded to Cloudinary:', finalImageUrl);
+        // With Cloudinary storage, req.file.path contains the Cloudinary URL
+        if (req.file && req.file.path) {
+          finalImageUrl = req.file.path;
+          console.log('Image uploaded to Cloudinary:', finalImageUrl);
+        } else {
+          throw new Error('No file path returned from upload');
+        }
       } catch (uploadError) {
         console.error('Failed to upload image to Cloudinary:', uploadError.message);
         // Continue with existing image URL or null
@@ -450,12 +468,16 @@ async function uploadRoomImage(req, res) {
       }
     }
 
-    // Upload to Imgur
+    // Upload to Cloudinary (multer-storage-cloudinary handles the upload)
     let imageUrl;
     try {
-      const cloudinaryResult = await uploadToCloudinary(req.file.buffer, req.file.originalname);
-      imageUrl = cloudinaryResult.url;
-      console.log('Room image uploaded to Cloudinary:', imageUrl);
+      // With Cloudinary storage, req.file.path contains the Cloudinary URL
+      if (req.file && req.file.path) {
+        imageUrl = req.file.path;
+        console.log('Room image uploaded to Cloudinary:', imageUrl);
+      } else {
+        throw new Error('No file path returned from upload');
+      }
     } catch (uploadError) {
       console.error('Failed to upload room image to Cloudinary:', uploadError.message);
       return res.status(500).json({

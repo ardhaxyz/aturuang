@@ -1,5 +1,5 @@
-# Use Node.js 18
-FROM node:18-alpine
+# Use Node.js 18 (Debian-based for better Prisma compatibility)
+FROM node:18
 
 # Set working directory
 WORKDIR /app
@@ -13,11 +13,14 @@ RUN npm ci
 # Copy application code
 COPY . .
 
-# Create data directory for SQLite (optional)
+# Generate Prisma client
+RUN npx prisma generate
+
+# Create data directory
 RUN mkdir -p /app/data
 
 # Expose port
 EXPOSE 3001
 
-# Start application
-CMD ["node", "src/index.js"]
+# Start application - run migrations first, then start server
+CMD ["sh", "-c", "npx prisma migrate deploy && node src/index.js"]

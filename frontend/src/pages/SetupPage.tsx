@@ -15,7 +15,9 @@ import {
   AlertCircle,
   Download,
   FileSpreadsheet,
-  Shield
+  Shield,
+  Eye,
+  EyeOff
 } from 'lucide-react';
 
 interface CsvResult {
@@ -38,6 +40,8 @@ export function SetupPage() {
   });
   const [superadminError, setSuperadminError] = useState('');
   const [superadminSuccess, setSuperadminSuccess] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   // CSV upload states
   const [orgCsvFile, setOrgCsvFile] = useState<File | null>(null);
@@ -299,28 +303,46 @@ super.user,super@example.com,password123,superadmin,`;
                     <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
                       Password
                     </label>
-                    <input
-                      type="password"
-                      required
-                      value={superadminData.password}
-                      onChange={(e) => setSuperadminData({...superadminData, password: e.target.value})}
-                      className="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 shadow-sm focus:border-primary-500 focus:ring-primary-500 dark:bg-gray-700 dark:text-white sm:text-sm px-3 py-2"
-                      placeholder="Enter password (min 6 characters)"
-                    />
+                    <div className="relative mt-1">
+                      <input
+                        type={showPassword ? "text" : "password"}
+                        required
+                        value={superadminData.password}
+                        onChange={(e) => setSuperadminData({...superadminData, password: e.target.value})}
+                        className="block w-full rounded-md border-gray-300 dark:border-gray-600 shadow-sm focus:border-primary-500 focus:ring-primary-500 dark:bg-gray-700 dark:text-white sm:text-sm px-3 py-2 pr-10"
+                        placeholder="Enter password (min 6 characters)"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowPassword(!showPassword)}
+                        className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+                      >
+                        {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                      </button>
+                    </div>
                   </div>
 
                   <div>
                     <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
                       Confirm Password
                     </label>
-                    <input
-                      type="password"
-                      required
-                      value={superadminData.confirmPassword}
-                      onChange={(e) => setSuperadminData({...superadminData, confirmPassword: e.target.value})}
-                      className="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 shadow-sm focus:border-primary-500 focus:ring-primary-500 dark:bg-gray-700 dark:text-white sm:text-sm px-3 py-2"
-                      placeholder="Confirm password"
-                    />
+                    <div className="relative mt-1">
+                      <input
+                        type={showConfirmPassword ? "text" : "password"}
+                        required
+                        value={superadminData.confirmPassword}
+                        onChange={(e) => setSuperadminData({...superadminData, confirmPassword: e.target.value})}
+                        className="block w-full rounded-md border-gray-300 dark:border-gray-600 shadow-sm focus:border-primary-500 focus:ring-primary-500 dark:bg-gray-700 dark:text-white sm:text-sm px-3 py-2 pr-10"
+                        placeholder="Confirm password"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                        className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+                      >
+                        {showConfirmPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                      </button>
+                    </div>
                   </div>
 
                   {superadminError && (

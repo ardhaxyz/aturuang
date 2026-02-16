@@ -1,11 +1,9 @@
 import { useEffect, useState } from 'react';
-import { Users, Monitor, Video, Volume2, Thermometer, Wifi, Globe, Building2, DoorOpen, Plus } from 'lucide-react';
+import { Users, Globe, Building2, DoorOpen, Plus } from 'lucide-react';
 import { roomAPI } from '../utils/api';
 import { Room } from '../types';
 import { useAuth } from '../contexts/AuthContext';
 import { Link } from 'react-router-dom';
-
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
 
 export function RoomsPage() {
   const { isAdmin } = useAuth();
@@ -29,23 +27,6 @@ export function RoomsPage() {
       console.error('Failed to fetch rooms:', error);
     } finally {
       setIsLoading(false);
-    }
-  };
-
-  const getFacilityIcon = (facility: string) => {
-    switch (facility.toLowerCase()) {
-      case 'projector':
-        return <Monitor className="h-3 w-3" />;
-      case 'video conference':
-        return <Video className="h-3 w-3" />;
-      case 'sound system':
-        return <Volume2 className="h-3 w-3" />;
-      case 'ac':
-        return <Thermometer className="h-3 w-3" />;
-      case 'wifi':
-        return <Wifi className="h-3 w-3" />;
-      default:
-        return <Users className="h-3 w-3" />;
     }
   };
 
@@ -82,7 +63,7 @@ export function RoomsPage() {
         )}
       </div>
 
-      {/* Rooms Grid - Same layout as Admin Rooms */}
+      {/* Rooms Grid - Same style as RoomManagementPage */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
         {rooms.map((room) => (
           <div
@@ -90,70 +71,63 @@ export function RoomsPage() {
             className="bg-white dark:bg-gray-800 rounded-lg shadow overflow-hidden border border-gray-200 dark:border-gray-700 cursor-pointer hover:shadow-lg transition-shadow"
             onClick={() => openRoomModal(room)}
           >
-            {/* Room Image */}
-            <div className="relative">
+            {/* Room Image - h-40 fixed */}
+            <div className="h-40 bg-gray-200 dark:bg-gray-700 relative">
               {room.imageUrl ? (
                 <img
-                  src={`${API_URL}${room.imageUrl}`}
+                  src={room.imageUrl}
                   alt={room.name}
-                  className="w-full h-auto object-cover"
-                  loading="lazy"
+                  className="w-full h-full object-cover"
                 />
               ) : (
-                <div className="w-full aspect-square bg-gradient-to-br from-gray-100 to-gray-200 dark:from-gray-700 dark:to-gray-600 flex items-center justify-center">
-                  <DoorOpen className="h-16 w-16 text-gray-400 dark:text-gray-500" />
+                <div className="w-full h-full flex items-center justify-center">
+                  <DoorOpen className="h-12 w-12 text-gray-400 dark:text-gray-500" />
                 </div>
               )}
               
-              {/* Overlay with capacity badge */}
+              {/* Badge - top right */}
               <div className="absolute top-2 right-2">
-                <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-black/70 text-white backdrop-blur-sm">
-                  <Users className="h-3 w-3 mr-1" />
-                  {room.capacity}
-                </span>
-              </div>
-
-              {/* Public/Organization badge */}
-              <div className="absolute top-2 left-2">
-                <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium backdrop-blur-sm ${
+                <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
                   room.isPublic
-                    ? 'bg-purple-500/80 text-white'
-                    : 'bg-blue-500/80 text-white'
+                    ? 'bg-purple-100 dark:bg-purple-900/30 text-purple-800 dark:text-purple-300'
+                    : 'bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-300'
                 }`}>
-                  {room.isPublic ? <Globe className="h-3 w-3 mr-1" /> : <Building2 className="h-3 w-3 mr-1" />}
+                  {room.isPublic ? <Globe size={12} className="mr-1" /> : <Building2 size={12} className="mr-1" />}
                   {room.isPublic ? 'Public' : (room.organization?.name || 'Organization')}
                 </span>
               </div>
             </div>
 
             {/* Card Content */}
-            <div className="p-3">
-              <h3 className="font-semibold text-gray-900 dark:text-white text-sm truncate">{room.name}</h3>
-              
-              {/* Organization name if not public */}
-              {!room.isPublic && room.organization && (
-                <p className="text-xs text-gray-500 dark:text-gray-400 mt-1 truncate">
-                  {room.organization.name}
-                </p>
-              )}
+            <div className="p-4">
+              <div className="flex justify-between items-start">
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-900 dark:text-white">{room.name}</h3>
+                  <div className="mt-1 flex items-center text-sm text-gray-600 dark:text-gray-400">
+                    <Users size={16} className="mr-1" />
+                    Capacity: {room.capacity} people
+                  </div>
+                </div>
+              </div>
 
-              {/* Facilities pills */}
-              <div className="mt-2 flex flex-wrap gap-1">
-                {room.facilities.slice(0, 3).map((facility, index) => (
+              {/* Facilities - without icons */}
+              <div className="mt-3 flex flex-wrap gap-1">
+                {room.facilities?.map((facility) => (
                   <span
-                    key={index}
-                    className="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300"
+                    key={facility}
+                    className="inline-flex items-center px-2 py-1 rounded-md text-xs font-medium bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-300"
                   >
-                    {getFacilityIcon(facility)}
-                    <span className="ml-0.5">{facility}</span>
+                    {facility}
                   </span>
                 ))}
-                {room.facilities.length > 3 && (
-                  <span className="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400">
-                    +{room.facilities.length - 3}
-                  </span>
-                )}
               </div>
+
+              {/* Organization */}
+              {room.organization && (
+                <div className="mt-3 text-sm text-gray-500 dark:text-gray-400">
+                  Org: {room.organization.name}
+                </div>
+              )}
             </div>
           </div>
         ))}
@@ -178,7 +152,7 @@ export function RoomsPage() {
             <div className="relative h-64 bg-gray-200 dark:bg-gray-700">
               {selectedRoom.imageUrl ? (
                 <img
-                  src={`${API_URL}${selectedRoom.imageUrl}`}
+                  src={selectedRoom.imageUrl}
                   alt={selectedRoom.name}
                   className="w-full h-full object-cover"
                 />
@@ -232,8 +206,7 @@ export function RoomsPage() {
                       key={index}
                       className="inline-flex items-center px-3 py-1.5 rounded-full text-sm font-medium bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-300"
                     >
-                      {getFacilityIcon(facility)}
-                      <span className="ml-1">{facility}</span>
+                      {facility}
                     </span>
                   ))}
                 </div>

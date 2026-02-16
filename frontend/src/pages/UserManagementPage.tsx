@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Plus, Edit2, Trash2, Users, Key, CheckCircle, XCircle, Crown, Shield, User, Upload, Download, FileSpreadsheet } from 'lucide-react';
+import { Plus, Edit2, Trash2, Users, Key, CheckCircle, XCircle, Crown, Shield, User, Upload, Download, FileSpreadsheet, Eye, EyeOff } from 'lucide-react';
 import { userAPI, organizationAPI } from '../utils/api';
 import api from '../utils/api';
 import { User as UserType, Organization } from '../types';
@@ -9,6 +9,12 @@ const ROLE_OPTIONS = [
   { value: 'user', label: 'User', icon: User, color: 'bg-gray-100 text-gray-800' },
   { value: 'org_admin', label: 'Org Admin', icon: Shield, color: 'bg-blue-100 text-blue-800' },
   { value: 'superadmin', label: 'Superadmin', icon: Crown, color: 'bg-purple-100 text-purple-800' },
+];
+
+const STATUS_OPTIONS = [
+  { value: '', label: 'All Status' },
+  { value: 'active', label: 'Active' },
+  { value: 'inactive', label: 'Inactive' },
 ];
 
 export function UserManagementPage() {
@@ -35,6 +41,15 @@ export function UserManagementPage() {
   const [csvFile, setCsvFile] = useState<File | null>(null);
   const [importLoading, setImportLoading] = useState(false);
   const [importResult, setImportResult] = useState<{ success: boolean; imported: number; errors: string[] } | null>(null);
+
+  // Filter states
+  const [roleFilter, setRoleFilter] = useState('');
+  const [orgFilter, setOrgFilter] = useState('');
+  const [statusFilter, setStatusFilter] = useState('');
+
+  // Show password states
+  const [showPassword, setShowPassword] = useState(false);
+  const [showResetPassword, setShowResetPassword] = useState(false);
 
   useEffect(() => {
     fetchUsers();
@@ -245,6 +260,15 @@ super.user,super@example.com,password123,superadmin,`;
     );
   };
 
+  const filteredUsers = users.filter(user => {
+    const matchesRole = !roleFilter || user.role === roleFilter;
+    const matchesOrg = !orgFilter || user.organizationId === orgFilter;
+    const matchesStatus = !statusFilter || 
+      (statusFilter === 'active' && user.isActive) ||
+      (statusFilter === 'inactive' && !user.isActive);
+    return matchesRole && matchesOrg && matchesStatus;
+  });
+
   if (isLoading) {
     return (
       <div className="flex justify-center items-center h-64">
@@ -277,6 +301,57 @@ super.user,super@example.com,password123,superadmin,`;
             <Plus size={20} className="mr-2" />
             Add User
           </button>
+</div>
+      </div>
+
+      {/* Filter Bar */}
+      <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-4 border border-gray-200 dark:border-gray-700">
+        <div className="flex flex-wrap gap-4">
+          {/* Role Filter */}
+          <div className="flex-1 min-w-[150px]">
+            <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">Role</label>
+            <select
+              value={roleFilter}
+              onChange={(e) => setRoleFilter(e.target.value)}
+              className="block w-full border border-gray-300 dark:border-gray-600 rounded-md shadow-sm py-2 px-3 text-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-primary-500 focus:border-primary-500"
+            >
+              <option value="">All Roles</option>
+              {ROLE_OPTIONS.map((role) => (
+                <option key={role.value} value={role.value}>{role.label}</option>
+              ))}
+            </select>
+          </div>
+
+          {/* Organization Filter - Only for Superadmin */}
+          {isSuperadmin && (
+            <div className="flex-1 min-w-[150px]">
+              <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">Organization</label>
+              <select
+                value={orgFilter}
+                onChange={(e) => setOrgFilter(e.target.value)}
+                className="block w-full border border-gray-300 dark:border-gray-600 rounded-md shadow-sm py-2 px-3 text-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-primary-500 focus:border-primary-500"
+              >
+                <option value="">All Organizations</option>
+                {organizations.map((org) => (
+                  <option key={org.id} value={org.id}>{org.name}</option>
+                ))}
+              </select>
+            </div>
+          )}
+
+          {/* Status Filter */}
+          <div className="flex-1 min-w-[150px]">
+            <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">Status</label>
+            <select
+              value={statusFilter}
+              onChange={(e) => setStatusFilter(e.target.value)}
+              className="block w-full border border-gray-300 dark:border-gray-600 rounded-md shadow-sm py-2 px-3 text-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-primary-500 focus:border-primary-500"
+            >
+              {STATUS_OPTIONS.map((status) => (
+                <option key={status.value} value={status.value}>{status.label}</option>
+              ))}
+            </select>
+          </div>
         </div>
       </div>
 
@@ -304,7 +379,7 @@ super.user,super@example.com,password123,superadmin,`;
               </tr>
             </thead>
             <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
-              {users.map((user) => (
+              {filteredUsers.map((user) => (
                 <tr key={user.id} className="hover:bg-gray-50 dark:hover:bg-gray-700/50">
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="flex items-center">
@@ -375,7 +450,7 @@ super.user,super@example.com,password123,superadmin,`;
       </div>
 
       {/* Empty State */}
-      {users.length === 0 && (
+      {filteredUsers.length === 0 && (
         <div className="text-center py-12 bg-white dark:bg-gray-800 rounded-lg shadow">
           <Users className="mx-auto h-12 w-12 text-gray-400 dark:text-gray-500" />
           <h3 className="mt-2 text-sm font-medium text-gray-900 dark:text-white">No users</h3>
@@ -421,15 +496,24 @@ super.user,super@example.com,password123,superadmin,`;
                     <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                       Password *
                     </label>
-                    <input
-                      type="password"
-                      required={!editingUser}
-                      minLength={6}
-                      value={formData.password}
-                      onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                      className="block w-full border border-gray-300 dark:border-gray-600 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-primary-500 focus:border-primary-500 sm:text-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-                      placeholder="Enter password (min 6 chars)"
-                    />
+                    <div className="relative">
+                      <input
+                        type={showPassword ? "text" : "password"}
+                        required={!editingUser}
+                        minLength={6}
+                        value={formData.password}
+                        onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                        className="block w-full border border-gray-300 dark:border-gray-600 rounded-md shadow-sm py-2 px-3 pr-10 focus:outline-none focus:ring-primary-500 focus:border-primary-500 sm:text-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                        placeholder="Enter password (min 6 chars)"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowPassword(!showPassword)}
+                        className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+                      >
+                        {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                      </button>
+                    </div>
                   </div>
                 )}
 
@@ -530,15 +614,24 @@ super.user,super@example.com,password123,superadmin,`;
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                     New Password *
                   </label>
-                  <input
-                    type="password"
-                    required
-                    minLength={6}
-                    value={resetPassword}
-                    onChange={(e) => setResetPassword(e.target.value)}
-                    className="block w-full border border-gray-300 dark:border-gray-600 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-primary-500 focus:border-primary-500 sm:text-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-                    placeholder="Enter new password (min 6 chars)"
-                  />
+                  <div className="relative">
+                    <input
+                      type={showResetPassword ? "text" : "password"}
+                      required
+                      minLength={6}
+                      value={resetPassword}
+                      onChange={(e) => setResetPassword(e.target.value)}
+                      className="block w-full border border-gray-300 dark:border-gray-600 rounded-md shadow-sm py-2 px-3 pr-10 focus:outline-none focus:ring-primary-500 focus:border-primary-500 sm:text-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                      placeholder="Enter new password (min 6 chars)"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowResetPassword(!showResetPassword)}
+                      className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+                    >
+                      {showResetPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                    </button>
+                  </div>
                 </div>
 
                 <div className="flex justify-end space-x-3 pt-4 border-t border-gray-200 dark:border-gray-700">

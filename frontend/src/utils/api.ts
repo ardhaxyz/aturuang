@@ -1,8 +1,8 @@
 import axios from 'axios';
 import { ApiResponse, Booking, Room, User, Organization } from '../types';
 
-// API base URL
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
+// API base URL - use relative path to go through nginx proxy
+const API_URL = import.meta.env.VITE_API_URL || '';
 
 // Create axios instance
 const api = axios.create({
