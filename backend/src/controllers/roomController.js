@@ -260,6 +260,9 @@ async function updateRoom(req, res) {
       });
     }
 
+    // Normalize organizationId (treat empty string as null/undefined)
+    const normalizedOrgId = organizationId && organizationId !== '' ? organizationId : null;
+    
     // Check permissions
     if (user.role === 'org_admin') {
       // Org admin can update:
@@ -275,7 +278,7 @@ async function updateRoom(req, res) {
       }
       
       // Cannot change organization of non-public rooms
-      if (!isPublicRoom && organizationId && organizationId !== user.organizationId) {
+      if (!isPublicRoom && normalizedOrgId && normalizedOrgId !== user.organizationId) {
         return res.status(403).json({
           success: false,
           message: 'Cannot change room organization',
@@ -283,7 +286,7 @@ async function updateRoom(req, res) {
       }
       
       // Org admin cannot convert public room to org room (only superadmin can)
-      if (isPublicRoom && organizationId && organizationId !== user.organizationId) {
+      if (isPublicRoom && normalizedOrgId && normalizedOrgId !== user.organizationId) {
         return res.status(403).json({
           success: false,
           message: 'Cannot assign public room to another organization',
@@ -291,11 +294,11 @@ async function updateRoom(req, res) {
       }
     }
 
-    // Determine isPublic based on organizationId changes
+    // Determine isPublic based on organizationId changes (using normalized value)
     let updateIsPublic = undefined;
     if (organizationId !== undefined) {
       // If organizationId is being updated
-      updateIsPublic = !organizationId; // true if no org, false if has org
+      updateIsPublic = !normalizedOrgId; // true if no org (null/empty), false if has org
     }
 
     // Handle image upload to Imgur
@@ -320,7 +323,7 @@ async function updateRoom(req, res) {
         imageUrl: finalImageUrl,
         isPublic: updateIsPublic,
         isActive: isActive !== undefined ? isActive : undefined,
-        organizationId: user.role === 'superadmin' ? organizationId : undefined,
+        organizationId: user.role === 'superadmin' ? normalizedOrgId : undefined,
       },
       include: {
         organization: {
