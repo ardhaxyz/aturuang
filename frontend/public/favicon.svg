@@ -1,6 +1,46 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-  <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
-  <line x1="16" y1="2" x2="16" y2="6"/>
-  <line x1="8" y1="2" x2="8" y2="6"/>
-  <line x1="3" y1="10" x2="21" y2="10"/>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+  <defs>
+    <style>
+      .calendar-body {
+        fill: #3b82f6;
+      }
+      .calendar-top {
+        fill: #1d4ed8;
+      }
+      .ring {
+        fill: #ffffff;
+      }
+      @media (prefers-color-scheme: dark) {
+        .calendar-body {
+          fill: #60a5fa;
+        }
+        .calendar-top {
+          fill: #3b82f6;
+        }
+        .ring {
+          fill: #1e293b;
+        }
+      }
+    </style>
+  </defs>
+  
+  <!-- Calendar Body -->
+  <rect class="calendar-body" x="15" y="25" width="70" height="60" rx="8" ry="8"/>
+  
+  <!-- Calendar Top Bar -->
+  <rect class="calendar-top" x="15" y="25" width="70" height="20" rx="8" ry="8"/>
+  <rect class="calendar-top" x="15" y="35" width="70" height="10"/>
+  
+  <!-- Left Ring -->
+  <rect class="ring" x="25" y="15" width="8" height="15" rx="4" ry="4"/>
+  
+  <!-- Right Ring -->
+  <rect class="ring" x="67" y="15" width="8" height="15" rx="4" ry="4"/>
+  
+  <!-- Grid Lines (optional detail) -->
+  <rect fill="#ffffff" fill-opacity="0.3" x="25" y="55" width="12" height="8" rx="1"/>
+  <rect fill="#ffffff" fill-opacity="0.3" x="44" y="55" width="12" height="8" rx="1"/>
+  <rect fill="#ffffff" fill-opacity="0.3" x="63" y="55" width="12" height="8" rx="1"/>
+  <rect fill="#ffffff" fill-opacity="0.3" x="25" y="67" width="12" height="8" rx="1"/>
+  <rect fill="#ffffff" fill-opacity="0.3" x="44" y="67" width="12" height="8" rx="1"/>
 </svg>
