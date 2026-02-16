@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Calendar, Clock, Building, PlusCircle } from 'lucide-react';
+import { Calendar, Clock, Building, PlusCircle, AlertCircle } from 'lucide-react';
 import { bookingAPI, roomAPI, settingsAPI } from '../utils/api';
 import { Booking, Room } from '../types';
 import { useAuth } from '../contexts/AuthContext';

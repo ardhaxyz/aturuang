@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { Building2, Users, Settings, Clock, ChevronLeft, ChevronRight, Filter, Type, Smile, AlignLeft } from 'lucide-react';
+import { Building2, Users, Settings, Clock, ChevronLeft, ChevronRight, Filter, Type, Smile, AlignLeft, CheckCircle, XCircle } from 'lucide-react';
 import { bookingAPI, organizationAPI, roomAPI, settingsAPI } from '../utils/api';
 import { Booking, Organization, Room } from '../types';
 import { useAuth } from '../contexts/AuthContext';

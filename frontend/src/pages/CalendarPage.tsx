@@ -81,6 +81,7 @@ export function CalendarPage() {
     return filteredBookings.map(booking => {
       const date = new Date(booking.date);
       const [startHour, startMin] = booking.startTime.split(':').map(Number);
+      const [endHour, endMin] = booking.endTime.split(':').map(Number);
 
       const startDate = new Date(date);
       startDate.setHours(startHour, startMin, 0, 0);
@@ -101,54 +102,6 @@ export function CalendarPage() {
         end: endDate.toISOString(),
         backgroundColor: roomColor,
         borderColor: roomColor,
-        extendedProps: {
-          room: booking.room?.name,
-          booker: booking.bookerName,
-          status: booking.status,
-          email: booking.bookerEmail,
-        },
-      };
-    });
-  };
-
-  const getStatusBorder = (status: string) => {
-    switch (status) {
-      case 'approved':
-        return 'border-l-green-500';
-      case 'pending':
-        return 'border-l-yellow-500';
-      case 'rejected':
-        return 'border-l-red-500';
-      default:
-        return 'border-l-gray-500';
-    }
-  };
-
-  const formatEvents = () => {
-    const filteredBookings = bookings.filter(booking => {
-      if (selectedRoom !== 'all' && booking.roomId !== selectedRoom) return false;
-      if (selectedStatus !== 'all' && booking.status !== selectedStatus) return false;
-      return true;
-    });
-
-    return filteredBookings.map(booking => {
-      const date = new Date(booking.date);
-      const [startHour, startMin] = booking.startTime.split(':').map(Number);
-      const [endHour, endMin] = booking.endTime.split(':').map(Number);
-      
-      const startDate = new Date(date);
-      startDate.setHours(startHour, startMin, 0, 0);
-      
-      const endDate = new Date(date);
-      endDate.setHours(endHour, endMin, 0, 0);
-
-      return {
-        id: booking.id,
-        title: `${booking.title}`,
-        start: startDate.toISOString(),
-        end: endDate.toISOString(),
-        backgroundColor: getStatusColor(booking.status),
-        borderColor: getStatusColor(booking.status),
         extendedProps: {
           room: booking.room?.name,
           booker: booking.bookerName,
@@ -264,8 +217,8 @@ export function CalendarPage() {
                 style={{
                   backgroundColor: getRoomColor(room.id),
                   color: 'white',
-                  ringColor: getRoomColor(room.id),
-                }}
+                  '--tw-ring-color': getRoomColor(room.id),
+                } as React.CSSProperties}
               >
                 {room.name}
               </button>
@@ -380,8 +333,8 @@ export function CalendarPage() {
             </thead>
             <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
               {bookings.slice(0, 10).map((booking) => (
-                <tr 
-                  key={booking.id} 
+                <tr
+                  key={booking.id}
                   className="hover:bg-gray-50 dark:hover:bg-gray-700/50 cursor-pointer"
                   onClick={() => {
                     const date = new Date(booking.date);
@@ -392,7 +345,7 @@ export function CalendarPage() {
                   }}
                 >
                   <td className="px-6 py-4">
-                    <div className={`pl-3 border-l-4 ${getStatusBorder(booking.status)}`}>
+                    <div className="pl-3 border-l-4" style={{ borderLeftColor: getRoomColor(booking.roomId) }}>
                       <div className="text-sm font-medium text-gray-900 dark:text-white">{booking.title}</div>
                       <div className="text-sm text-gray-500 dark:text-gray-400">{booking.room?.name}</div>
                     </div>
