@@ -1,5 +1,6 @@
 const { PrismaClient } = require('@prisma/client');
 const { deleteFile, getFileUrl } = require('../utils/upload');
+const { uploadToImgur } = require('../services/imgurService');
 
 const prisma = new PrismaClient();
 
@@ -184,12 +185,25 @@ async function createRoom(req, res) {
     // If no organization selected, room is public
     const isPublicRoom = !organizationId;
 
+    // Handle image upload to Imgur
+    let finalImageUrl = imageUrl;
+    if (req.file) {
+      try {
+        const imgurResult = await uploadToImgur(req.file.buffer, req.file.originalname);
+        finalImageUrl = imgurResult.url;
+        console.log('Image uploaded to Imgur:', finalImageUrl);
+      } catch (uploadError) {
+        console.error('Failed to upload image to Imgur:', uploadError.message);
+        // Continue without image - room will be created without image
+      }
+    }
+
     const room = await prisma.room.create({
       data: {
         name,
         capacity: parseInt(capacity),
         facilities: facilities ? JSON.stringify(facilities) : '[]',
-        imageUrl,
+        imageUrl: finalImageUrl,
         isPublic: isPublicRoom,
         organizationId: organizationId || null,
         isActive: true,
@@ -271,13 +285,26 @@ async function updateRoom(req, res) {
       updateIsPublic = !organizationId; // true if no org, false if has org
     }
 
+    // Handle image upload to Imgur
+    let finalImageUrl = imageUrl;
+    if (req.file) {
+      try {
+        const imgurResult = await uploadToImgur(req.file.buffer, req.file.originalname);
+        finalImageUrl = imgurResult.url;
+        console.log('Image uploaded to Imgur:', finalImageUrl);
+      } catch (uploadError) {
+        console.error('Failed to upload image to Imgur:', uploadError.message);
+        // Continue with existing image URL or null
+      }
+    }
+
     const room = await prisma.room.update({
       where: { id },
       data: {
         name,
         capacity: capacity ? parseInt(capacity) : undefined,
         facilities: facilities ? JSON.stringify(facilities) : undefined,
-        imageUrl,
+        imageUrl: finalImageUrl,
         isPublic: updateIsPublic,
         isActive: isActive !== undefined ? isActive : undefined,
         organizationId: user.role === 'superadmin' ? organizationId : undefined,
