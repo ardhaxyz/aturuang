@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { Building2, Users, Settings, CheckCircle, XCircle, Clock, ChevronLeft, ChevronRight, Filter, Type, Smile, AlignLeft } from 'lucide-react';
+import { Building2, Users, Settings, Clock, ChevronLeft, ChevronRight, Filter, Type, Smile, AlignLeft } from 'lucide-react';
 import { bookingAPI, organizationAPI, roomAPI, settingsAPI } from '../utils/api';
 import { Booking, Organization, Room } from '../types';
 import { useAuth } from '../contexts/AuthContext';
@@ -174,11 +174,11 @@ export function AdminDashboardPage() {
   const getStatusIcon = (status: string) => {
     switch (status) {
       case 'approved':
-        return <CheckCircle className="h-5 w-5 text-green-500" />;
+        return '✅';
       case 'rejected':
-        return <XCircle className="h-5 w-5 text-red-500" />;
+        return '❌';
       default:
-        return <Clock className="h-5 w-5 text-yellow-500" />;
+        return '⏳';
     }
   };
 

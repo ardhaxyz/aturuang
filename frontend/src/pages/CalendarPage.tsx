@@ -42,17 +42,73 @@ export function CalendarPage() {
     }
   };
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'approved':
-        return '#10b981';
-      case 'pending':
-        return '#f59e0b';
-      case 'rejected':
-        return '#ef4444';
-      default:
-        return '#6b7280';
-    }
+  // Room colors - assign different colors per room
+  const getRoomColors = () => {
+    const colors = [
+      '#3b82f6', // blue
+      '#10b981', // green
+      '#f59e0b', // amber
+      '#ef4444', // red
+      '#8b5cf6', // violet
+      '#ec4899', // pink
+      '#06b6d4', // cyan
+      '#84cc16', // lime
+      '#f97316', // orange
+      '#6366f1', // indigo
+    ];
+    const roomColors: Record<string, string> = {};
+    rooms.forEach((room, index) => {
+      roomColors[room.id] = colors[index % colors.length];
+    });
+    return roomColors;
+  };
+
+  const roomColors = getRoomColors();
+
+  const getRoomColor = (roomId: string) => {
+    return roomColors[roomId] || '#6b7280';
+  };
+
+  const formatEvents = () => {
+    const filteredBookings = bookings.filter(booking => {
+      // Filter out rejected bookings from calendar
+      if (booking.status === 'rejected') return false;
+      if (selectedRoom !== 'all' && booking.roomId !== selectedRoom) return false;
+      if (selectedStatus !== 'all' && booking.status !== selectedStatus) return false;
+      return true;
+    });
+
+    return filteredBookings.map(booking => {
+      const date = new Date(booking.date);
+      const [startHour, startMin] = booking.startTime.split(':').map(Number);
+
+      const startDate = new Date(date);
+      startDate.setHours(startHour, startMin, 0, 0);
+      
+      const endDate = new Date(date);
+      endDate.setHours(endHour, endMin, 0, 0);
+
+      // Color based on ROOM, not status
+      const roomColor = getRoomColor(booking.roomId);
+      
+      // Status emoji prefix
+      const statusEmoji = booking.status === 'approved' ? '✅' : '⏳';
+
+      return {
+        id: booking.id,
+        title: `${statusEmoji} ${booking.title}`,
+        start: startDate.toISOString(),
+        end: endDate.toISOString(),
+        backgroundColor: roomColor,
+        borderColor: roomColor,
+        extendedProps: {
+          room: booking.room?.name,
+          booker: booking.bookerName,
+          status: booking.status,
+          email: booking.bookerEmail,
+        },
+      };
+    });
   };
 
   const getStatusBorder = (status: string) => {
@@ -180,7 +236,6 @@ export function CalendarPage() {
               <option value="all">All Statuses</option>
               <option value="approved">Approved</option>
               <option value="pending">Pending</option>
-              <option value="rejected">Rejected</option>
             </select>
           </div>
 
@@ -194,21 +249,27 @@ export function CalendarPage() {
           </div>
         </div>
 
-        {/* Legend */}
+        {/* Room Legend - Mini Cards */}
         <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
-          <div className="flex flex-wrap gap-4 text-sm">
-            <div className="flex items-center">
-              <div className="h-3 w-3 rounded-full bg-green-500 mr-2"></div>
-              <span className="text-gray-600 dark:text-gray-400">Approved</span>
-            </div>
-            <div className="flex items-center">
-              <div className="h-3 w-3 rounded-full bg-yellow-500 mr-2"></div>
-              <span className="text-gray-600 dark:text-gray-400">Pending</span>
-            </div>
-            <div className="flex items-center">
-              <div className="h-3 w-3 rounded-full bg-red-500 mr-2"></div>
-              <span className="text-gray-600 dark:text-gray-400">Rejected</span>
-            </div>
+          <div className="flex flex-wrap gap-2">
+            {rooms.map((room) => (
+              <button
+                key={room.id}
+                onClick={() => setSelectedRoom(selectedRoom === room.id ? 'all' : room.id)}
+                className={`px-3 py-1.5 rounded-md text-xs font-medium transition-all ${
+                  selectedRoom === room.id
+                    ? 'ring-2 ring-offset-1'
+                    : 'opacity-70 hover:opacity-100'
+                }`}
+                style={{
+                  backgroundColor: getRoomColor(room.id),
+                  color: 'white',
+                  ringColor: getRoomColor(room.id),
+                }}
+              >
+                {room.name}
+              </button>
+            ))}
           </div>
         </div>
       </div>

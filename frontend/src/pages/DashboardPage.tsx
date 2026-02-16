@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Calendar, Clock, CheckCircle, XCircle, AlertCircle, Building, PlusCircle } from 'lucide-react';
+import { Calendar, Clock, Building, PlusCircle } from 'lucide-react';
 import { bookingAPI, roomAPI, settingsAPI } from '../utils/api';
 import { Booking, Room } from '../types';
 import { useAuth } from '../contexts/AuthContext';
@@ -108,11 +108,11 @@ export function DashboardPage() {
   const getStatusIcon = (status: string) => {
     switch (status) {
       case 'approved':
-        return <CheckCircle className="h-5 w-5 text-green-500" />;
+        return '✅';
       case 'rejected':
-        return <XCircle className="h-5 w-5 text-red-500" />;
+        return '❌';
       default:
-        return <AlertCircle className="h-5 w-5 text-yellow-500" />;
+        return '⏳';
     }
   };
 
@@ -227,8 +227,8 @@ export function DashboardPage() {
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusColor(booking.status)}`}>
-                        {getStatusIcon(booking.status)}
-                        <span className="ml-1 capitalize">{booking.status}</span>
+                        <span className="mr-1">{getStatusIcon(booking.status)}</span>
+                        <span className="capitalize">{booking.status}</span>
                       </span>
                     </td>
                   </tr>
